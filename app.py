@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Hybrid AI Assistant - ChatGPT Style Full Screen Interface
-A full-screen ChatGPT clone with healthcare billing expertise
+Hybrid AI Assistant - General Purpose + Healthcare Billing Expert
+A ChatGPT-style assistant that can handle any conversation while specializing in healthcare billing codes
 """
 
 import os
@@ -39,8 +39,6 @@ class ConversationContext:
     messages: List[Dict[str, str]] = field(default_factory=list)
     detected_codes: List[str] = field(default_factory=list)
     last_topic: Optional[str] = None
-    chat_history: List[Dict] = field(default_factory=list)
-    current_chat_id: str = "chat_1"
 
 # ============= Healthcare Billing Database =============
 
@@ -116,6 +114,41 @@ class BillingCodesDB:
                 code_type='HCPCS',
                 additional_info='Cyanocobalamin up to 1000 mcg.',
                 category='Injections'
+            ),
+            '80053': CodeInfo(
+                code='80053',
+                description='Comprehensive metabolic panel',
+                code_type='CPT',
+                additional_info='14 blood tests including glucose, kidney, and liver function.',
+                category='Laboratory'
+            ),
+            '70450': CodeInfo(
+                code='70450',
+                description='CT head/brain without contrast',
+                code_type='CPT',
+                additional_info='Computed tomography of head without contrast material.',
+                category='Radiology'
+            ),
+            '90837': CodeInfo(
+                code='90837',
+                description='Psychotherapy, 60 minutes',
+                code_type='CPT',
+                additional_info='Individual psychotherapy session.',
+                category='Mental Health'
+            ),
+            '36415': CodeInfo(
+                code='36415',
+                description='Venipuncture (blood draw)',
+                code_type='CPT',
+                additional_info='Collection of blood by needle.',
+                category='Laboratory'
+            ),
+            '99282': CodeInfo(
+                code='99282',
+                description='Emergency department visit, low-moderate severity',
+                code_type='CPT',
+                additional_info='ED visit for problems of low to moderate severity.',
+                category='Emergency'
             )
         }
     
@@ -165,9 +198,14 @@ class HybridAIAssistant:
     def detect_intent(self, message: str) -> Dict[str, Any]:
         """Detect if the message is about billing codes or general conversation"""
         lower_msg = message.lower()
+        
+        # Check for billing codes in the message
         codes = self.billing_db.search_codes(message)
         
-        billing_keywords = ['code', 'cpt', 'hcpcs', 'icd', 'drg', 'billing', 'medical code']
+        # Keywords that suggest billing/medical coding questions
+        billing_keywords = ['code', 'cpt', 'hcpcs', 'icd', 'drg', 'billing', 'medical code', 
+                          'healthcare code', 'diagnosis code', 'procedure code']
+        
         is_billing = any(keyword in lower_msg for keyword in billing_keywords) or len(codes) > 0
         
         return {
@@ -181,21 +219,21 @@ class HybridAIAssistant:
         responses = []
         
         if codes:
-            for code in codes[:3]:
+            for code in codes[:3]:  # Limit to first 3 codes
                 info = self.billing_db.lookup(code)
                 if info:
-                    response = f"### {info.code} ({info.code_type})\n\n"
-                    response += f"**Description:** {info.description}\n\n"
+                    response = f"**{info.code} ({info.code_type})**\n"
+                    response += f"📋 **Description:** {info.description}\n"
                     if info.additional_info:
-                        response += f"**Details:** {info.additional_info}\n\n"
+                        response += f"ℹ️ **Details:** {info.additional_info}\n"
                     if info.category:
-                        response += f"**Category:** {info.category}\n"
+                        response += f"🏷️ **Category:** {info.category}\n"
                     responses.append(response)
         
         if responses:
             final_response = "I found information about the billing code(s) you mentioned:\n\n"
-            final_response += "\n---\n\n".join(responses)
-            final_response += "\n\n💡 Need more details? Feel free to ask specific questions about these codes!"
+            final_response += "\n---\n".join(responses)
+            final_response += "\n\n💡 **Need more details?** Feel free to ask specific questions about these codes!"
             return final_response
         else:
             return self.get_general_response(message, billing_context=True)
@@ -203,20 +241,24 @@ class HybridAIAssistant:
     def get_general_response(self, message: str, billing_context: bool = False) -> str:
         """Get response from OpenRouter API for general queries"""
         
+        # Prepare system prompt
         system_prompt = """You are a helpful, friendly AI assistant with expertise in healthcare billing codes. 
         You can assist with any topic - from casual conversation to complex questions. 
         When discussing medical billing codes, you provide accurate, detailed information.
-        Be conversational, helpful, and engaging. Format your responses with markdown for better readability.
-        Use headers (###), bold (**text**), and bullet points where appropriate."""
+        Be conversational, helpful, and engaging. Use emojis occasionally to be friendly.
+        Keep responses concise but informative."""
         
         if billing_context:
             system_prompt += "\nThe user is asking about medical billing. Provide helpful information even if you don't have specific code details."
         
+        # Build conversation history for context
         messages = [{'role': 'system', 'content': system_prompt}]
         
+        # Add recent conversation history (last 5 exchanges)
         for msg in self.context.messages[-10:]:
             messages.append(msg)
         
+        # Add current message
         messages.append({'role': 'user', 'content': message})
         
         try:
@@ -236,9 +278,11 @@ class HybridAIAssistant:
                 result = response.json()
                 ai_response = result['choices'][0]['message']['content']
                 
+                # Update context
                 self.context.messages.append({'role': 'user', 'content': message})
                 self.context.messages.append({'role': 'assistant', 'content': ai_response})
                 
+                # Keep only last 20 messages in context
                 if len(self.context.messages) > 20:
                     self.context.messages = self.context.messages[-20:]
                 
@@ -256,7 +300,8 @@ class HybridAIAssistant:
         fallbacks = [
             "I'm having trouble connecting right now, but I'm still here to help! Could you rephrase your question?",
             "Let me think about that differently. What specific aspect would you like to know more about?",
-            "That's an interesting question! While I process that, is there anything specific you'd like to explore?"
+            "That's an interesting question! While I process that, is there anything specific you'd like to explore?",
+            "I'm here to help! Could you provide a bit more detail about what you're looking for?"
         ]
         return random.choice(fallbacks)
     
@@ -265,8 +310,10 @@ class HybridAIAssistant:
         if not message.strip():
             return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
         
+        # Detect intent
         intent = self.detect_intent(message)
         
+        # Route to appropriate handler
         if intent['is_billing'] and intent['codes_found']:
             return self.handle_billing_query(message, intent['codes_found'])
         else:
@@ -276,411 +323,273 @@ class HybridAIAssistant:
         """Reset conversation context"""
         self.context = ConversationContext()
 
-# ============= Create ChatGPT-Style Interface =============
+# ============= Gradio Interface =============
 
 def create_interface():
     assistant = HybridAIAssistant()
     
-    # Full-screen ChatGPT CSS
+    # ChatGPT-style CSS
     custom_css = """
-    /* Full screen layout */
+    /* Main container */
     .gradio-container {
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100vw !important;
-        max-width: 100vw !important;
-        height: 100vh !important;
-        display: flex !important;
-        flex-direction: column !important;
-        font-family: 'Söhne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        background: #f9f9f9 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+        max-width: 900px !important;
+        margin: auto !important;
+        background: #ffffff !important;
     }
     
-    /* Remove all Gradio default spacing */
-    .contain, .wrapper, .wrap, .block {
-        border: none !important;
-        background: transparent !important;
+    /* Header styling */
+    .header-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 15px 15px 0 0;
+        margin-bottom: 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
-    /* Main container layout */
-    .main-container {
-        display: flex;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-        background: #fff;
-    }
-    
-    /* Sidebar */
-    .sidebar {
-        width: 260px;
-        background: #202123;
+    .header-title {
         color: white;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow-y: auto;
-    }
-    
-    .sidebar-header {
-        padding: 12px;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .new-chat-btn {
-        width: 100%;
-        padding: 12px 16px;
-        background: transparent;
-        border: 1px solid rgba(255,255,255,0.2);
-        color: white;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
         display: flex;
         align-items: center;
-        gap: 12px;
-        transition: background 0.2s;
+        justify-content: center;
+        gap: 0.5rem;
     }
     
-    .new-chat-btn:hover {
-        background: rgba(255,255,255,0.1);
+    .header-subtitle {
+        color: rgba(255,255,255,0.9);
+        font-size: 1rem;
+        margin-top: 0.5rem;
+        text-align: center;
     }
     
-    .chat-history {
-        flex: 1;
-        padding: 8px;
-        overflow-y: auto;
-    }
-    
-    .chat-item {
-        padding: 12px 16px;
-        margin: 2px 0;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 14px;
-        color: rgba(255,255,255,0.8);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: background 0.2s;
-    }
-    
-    .chat-item:hover {
-        background: rgba(255,255,255,0.05);
-    }
-    
-    .chat-item.active {
-        background: rgba(255,255,255,0.1);
-        color: white;
-    }
-    
-    /* Main chat area */
-    .chat-container {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: #fff;
-        position: relative;
-    }
-    
-    /* Chat messages area */
+    /* Chat container */
     #chatbot {
-        flex: 1;
-        overflow-y: auto;
-        padding: 0;
-        background: #fff;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    #chatbot > .wrap {
-        max-width: 48rem;
-        margin: 0 auto;
-        width: 100%;
-        padding: 2rem 1rem;
+        height: 500px !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+        background: #ffffff !important;
     }
     
     /* Message styling */
     .message {
-        padding: 1.5rem 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+        border-radius: 12px !important;
+        font-size: 15px !important;
+        line-height: 1.6 !important;
     }
     
-    .message.user {
-        background: #fff;
+    .user-message {
+        background: #f3f4f6 !important;
+        border: 1px solid #e5e7eb !important;
+        margin-left: 20% !important;
     }
     
-    .message.assistant {
-        background: #f7f7f8;
+    .bot-message {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        margin-right: 20% !important;
     }
-    
-    .message-content {
-        max-width: 48rem;
-        margin: 0 auto;
-        display: flex;
-        gap: 1.5rem;
-        padding: 0 1rem;
-    }
-    
-    .avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 4px;
-        background: #5436DA;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 14px;
-        flex-shrink: 0;
-    }
-    
-    .avatar.assistant {
-        background: #19c37d;
-    }
-    
-    .message-text {
-        flex: 1;
-        line-height: 1.6;
-        font-size: 15px;
-        color: #2d2d2d;
-    }
-    
-    .message-text h1 { font-size: 1.8em; margin: 1em 0 0.5em; }
-    .message-text h2 { font-size: 1.5em; margin: 1em 0 0.5em; }
-    .message-text h3 { font-size: 1.2em; margin: 1em 0 0.5em; font-weight: 600; }
-    .message-text p { margin: 0.8em 0; }
-    .message-text ul, .message-text ol { margin: 0.8em 0; padding-left: 1.5em; }
-    .message-text li { margin: 0.4em 0; }
-    .message-text code { 
-        background: #f3f4f6; 
-        padding: 2px 6px; 
-        border-radius: 4px; 
-        font-family: 'Consolas', monospace;
-        font-size: 0.9em;
-    }
-    .message-text pre {
-        background: #1e1e1e;
-        color: #d4d4d4;
-        padding: 1em;
-        border-radius: 6px;
-        overflow-x: auto;
-        margin: 1em 0;
-    }
-    .message-text strong { font-weight: 600; }
     
     /* Input area */
-    .input-container {
-        border-top: 1px solid #e5e5e5;
-        background: #fff;
-        padding: 1rem 0;
-    }
-    
-    .input-wrapper {
-        max-width: 48rem;
-        margin: 0 auto;
-        padding: 0 1rem;
-    }
-    
     #input-box {
-        width: 100%;
-        border: 1px solid #d9d9e3;
-        border-radius: 12px;
-        padding: 12px 48px 12px 16px;
-        font-size: 15px;
-        resize: none;
-        background: #fff;
-        color: #2d2d2d;
-        outline: none;
-        box-shadow: 0 0 0 2px transparent;
-        transition: all 0.2s;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        font-size: 15px !important;
+        transition: all 0.3s ease !important;
+        background: #ffffff !important;
     }
     
     #input-box:focus {
-        border-color: #10a37f;
-        box-shadow: 0 0 0 2px rgba(16,163,127,0.1);
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        outline: none !important;
     }
     
-    .send-button {
-        position: absolute;
-        right: 12px;
-        bottom: 12px;
-        background: #10a37f;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 8px 12px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        transition: background 0.2s;
+    /* Buttons */
+    .primary-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+        cursor: pointer !important;
+        transition: transform 0.2s ease !important;
     }
     
-    .send-button:hover {
-        background: #0d8f6e;
+    .primary-btn:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
     }
     
-    .send-button:disabled {
-        background: #e5e5e5;
-        cursor: not-allowed;
+    .secondary-btn {
+        background: #f3f4f6 !important;
+        color: #374151 !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
     }
     
-    /* Welcome screen */
-    .welcome-screen {
-        max-width: 48rem;
-        margin: 0 auto;
-        padding: 3rem 1rem;
-        text-align: center;
+    .secondary-btn:hover {
+        background: #e5e7eb !important;
+        border-color: #d1d5db !important;
     }
     
-    .welcome-title {
-        font-size: 2rem;
-        font-weight: 600;
-        color: #2d2d2d;
-        margin-bottom: 1rem;
+    /* Example chips */
+    .example-chip {
+        display: inline-block !important;
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 20px !important;
+        padding: 8px 16px !important;
+        margin: 4px !important;
+        font-size: 14px !important;
+        color: #4b5563 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
     }
     
-    .welcome-subtitle {
-        font-size: 1rem;
-        color: #6e6e80;
-        margin-bottom: 3rem;
+    .example-chip:hover {
+        background: #f9fafb !important;
+        border-color: #667eea !important;
+        color: #667eea !important;
+        transform: translateY(-1px) !important;
     }
     
-    .example-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 12px;
-        margin-top: 2rem;
-    }
-    
-    .example-card {
-        background: #f7f7f8;
-        border: 1px solid #e5e5e5;
+    /* Info cards */
+    .info-card {
+        background: linear-gradient(135deg, #f6f8fb 0%, #f1f5f9 100%);
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-align: left;
+        padding: 1rem;
+        margin: 1rem 0;
     }
     
-    .example-card:hover {
-        background: #ececf1;
-        border-color: #d9d9e3;
-    }
-    
-    .example-title {
-        font-weight: 600;
-        font-size: 14px;
-        color: #2d2d2d;
-        margin-bottom: 4px;
-    }
-    
-    .example-text {
-        font-size: 13px;
-        color: #6e6e80;
-    }
-    
-    /* Responsive */
+    /* Responsive design */
     @media (max-width: 768px) {
-        .sidebar {
-            display: none;
+        .gradio-container {
+            padding: 0 !important;
         }
         
-        .input-wrapper {
-            padding: 0 0.5rem;
+        .header-title {
+            font-size: 1.5rem;
         }
         
-        #chatbot > .wrap {
-            padding: 1rem 0.5rem;
+        .user-message, .bot-message {
+            margin-left: 5% !important;
+            margin-right: 5% !important;
         }
     }
     """
     
-    with gr.Blocks(css=custom_css, theme=gr.themes.Base(), title="AI Assistant") as app:
-        
-        # Welcome message formatted with markdown
-        welcome_html = """
-<div class="welcome-screen">
-    <h1 class="welcome-title">AI Assistant Plus</h1>
-    <p class="welcome-subtitle">Your intelligent companion for any question + Healthcare Billing Expert</p>
-    
-    <div class="example-grid">
-        <div class="example-card" onclick="document.querySelector('#input-box textarea').value='What is medical billing code A0429?'; document.querySelector('#input-box textarea').dispatchEvent(new Event('input'));">
-            <div class="example-title">🏥 Medical Billing</div>
-            <div class="example-text">"Explain code A0429"</div>
-        </div>
-        <div class="example-card" onclick="document.querySelector('#input-box textarea').value='How does machine learning work?'; document.querySelector('#input-box textarea').dispatchEvent(new Event('input'));">
-            <div class="example-title">🤖 Learn</div>
-            <div class="example-text">"Explain ML simply"</div>
-        </div>
-        <div class="example-card" onclick="document.querySelector('#input-box textarea').value='Write a professional email template'; document.querySelector('#input-box textarea').dispatchEvent(new Event('input'));">
-            <div class="example-title">✍️ Write</div>
-            <div class="example-text">"Draft an email"</div>
-        </div>
-        <div class="example-card" onclick="document.querySelector('#input-box textarea').value='Give me a healthy recipe idea'; document.querySelector('#input-box textarea').dispatchEvent(new Event('input'));">
-            <div class="example-title">🍳 Create</div>
-            <div class="example-text">"Recipe ideas"</div>
-        </div>
-    </div>
-</div>
-"""
-        
-        # Main layout with HTML structure
+    with gr.Blocks(css=custom_css, theme=gr.themes.Base()) as app:
+        # Header
         gr.HTML("""
-<div class="main-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <button class="new-chat-btn">
-                <span>+</span>
-                <span>New chat</span>
-            </button>
-        </div>
-        <div class="chat-history">
-            <div class="chat-item active">Healthcare Billing Expert</div>
-            <div class="chat-item">General Assistant</div>
-            <div class="chat-item">Previous Chat</div>
-        </div>
-    </div>
-    
-    <!-- Main chat area -->
-    <div class="chat-container">
+            <div class="header-container">
+                <h1 class="header-title">
+                    <span>🤖</span>
+                    <span>AI Assistant</span>
+                    <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px;">PLUS</span>
+                </h1>
+                <p class="header-subtitle">Your intelligent companion for any question + Healthcare Billing Expert</p>
+            </div>
         """)
         
-        # Chat interface
+        # Main chat interface
         chatbot_ui = gr.Chatbot(
-            value=[],
+            value=[
+                {
+                    "role": "assistant",
+                    "content": "👋 **Hello! I'm your AI Assistant!**\n\nI can help you with:\n\n🏥 **Healthcare Billing Codes** - I'm an expert in CPT, HCPCS, ICD-10, and DRG codes\n💬 **General Conversation** - Ask me anything!\n📚 **Learning & Education** - Help with various topics\n✍️ **Writing & Creation** - Stories, emails, ideas\n🔧 **Problem Solving** - Let's work through challenges together\n\n**Try asking:**\n• 'What is billing code A0429?'\n• 'Help me write an email'\n• 'Explain quantum physics simply'\n• 'What's the weather like?'\n\nHow can I assist you today? 😊"
+                }
+            ],
             elem_id="chatbot",
             show_label=False,
             type="messages",
-            height=600,
-            render_markdown=True,
-            avatar_images=None
+            height=500
         )
         
-        # Set initial welcome message
-        chatbot_ui.value = [
-            {
-                "role": "assistant",
-                "content": welcome_html
-            }
-        ]
+        # Input section
+        with gr.Row():
+            msg = gr.Textbox(
+                placeholder="Ask me anything... (e.g., 'Explain code 99213' or 'Help me write a story')",
+                show_label=False,
+                elem_id="input-box",
+                scale=5,
+                lines=1,
+                max_lines=5
+            )
+            send_btn = gr.Button("Send", elem_classes="primary-btn", scale=1)
         
-        # Input area
-        with gr.Row(elem_classes="input-container"):
-            with gr.Column(elem_classes="input-wrapper"):
-                msg = gr.Textbox(
-                    placeholder="Message AI Assistant...",
-                    show_label=False,
-                    elem_id="input-box",
-                    lines=1,
-                    max_lines=5,
-                    autofocus=True
-                )
+        # Quick examples
+        gr.HTML("<div style='text-align: center; margin: 1rem 0; color: #6b7280; font-size: 14px;'>Quick Examples</div>")
         
-        gr.HTML("</div></div>")
+        with gr.Row():
+            ex_col1 = gr.Column(scale=1)
+            ex_col2 = gr.Column(scale=1)
+            ex_col3 = gr.Column(scale=1)
+        
+        with ex_col1:
+            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>🏥 Medical Billing</div>")
+            ex1 = gr.Button("What is code A0429?", elem_classes="example-chip", size="sm")
+            ex2 = gr.Button("Explain CPT 99213", elem_classes="example-chip", size="sm")
+            ex3 = gr.Button("DRG 470 details", elem_classes="example-chip", size="sm")
+        
+        with ex_col2:
+            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>💭 General Questions</div>")
+            ex4 = gr.Button("How does AI work?", elem_classes="example-chip", size="sm")
+            ex5 = gr.Button("Recipe for pasta", elem_classes="example-chip", size="sm")
+            ex6 = gr.Button("Python tutorial", elem_classes="example-chip", size="sm")
+        
+        with ex_col3:
+            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>✍️ Creative Help</div>")
+            ex7 = gr.Button("Write a poem", elem_classes="example-chip", size="sm")
+            ex8 = gr.Button("Email template", elem_classes="example-chip", size="sm")
+            ex9 = gr.Button("Story ideas", elem_classes="example-chip", size="sm")
+        
+        # Control buttons
+        with gr.Row():
+            clear_btn = gr.Button("🔄 New Chat", elem_classes="secondary-btn", size="sm")
+            gr.HTML("<div style='flex-grow: 1;'></div>")
+            gr.HTML("""
+                <div style='text-align: right; color: #6b7280; font-size: 12px;'>
+                    Powered by GPT-3.5 • Healthcare Billing Database
+                </div>
+            """)
+        
+        # Footer info
+        gr.HTML("""
+            <div class="info-card" style="margin-top: 2rem;">
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">15+</div>
+                        <div style="color: #6b7280; font-size: 12px;">Medical Codes</div>
+                    </div>
+                    <div>
+                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">∞</div>
+                        <div style="color: #6b7280; font-size: 12px;">Topics</div>
+                    </div>
+                    <div>
+                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">24/7</div>
+                        <div style="color: #6b7280; font-size: 12px;">Available</div>
+                    </div>
+                    <div>
+                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">Fast</div>
+                        <div style="color: #6b7280; font-size: 12px;">Responses</div>
+                    </div>
+                </div>
+            </div>
+        """)
         
         # Event handlers
         def respond(message, chat_history):
@@ -696,8 +605,29 @@ def create_interface():
             
             return "", chat_history
         
+        def clear_chat():
+            assistant.reset_context()
+            welcome_msg = {
+                "role": "assistant",
+                "content": "👋 **Chat cleared! Ready for a new conversation.**\n\nI'm here to help with anything you need - from healthcare billing codes to general questions!\n\nWhat would you like to know? 😊"
+            }
+            return [welcome_msg]
+        
         # Connect events
         msg.submit(respond, [msg, chatbot_ui], [msg, chatbot_ui])
+        send_btn.click(respond, [msg, chatbot_ui], [msg, chatbot_ui])
+        clear_btn.click(clear_chat, outputs=[chatbot_ui])
+        
+        # Example button handlers
+        ex1.click(lambda: "What is healthcare billing code A0429?", outputs=msg)
+        ex2.click(lambda: "Can you explain CPT code 99213 in detail?", outputs=msg)
+        ex3.click(lambda: "Tell me about DRG 470", outputs=msg)
+        ex4.click(lambda: "How does artificial intelligence work?", outputs=msg)
+        ex5.click(lambda: "Give me a simple pasta recipe", outputs=msg)
+        ex6.click(lambda: "Teach me Python basics", outputs=msg)
+        ex7.click(lambda: "Write a short poem about nature", outputs=msg)
+        ex8.click(lambda: "Help me write a professional email template", outputs=msg)
+        ex9.click(lambda: "Give me creative story ideas", outputs=msg)
     
     return app
 
@@ -707,6 +637,5 @@ if __name__ == "__main__":
     app.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False,
-        favicon_path=None
+        share=False
     )
