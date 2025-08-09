@@ -1,127 +1,256 @@
-import gradio as gr
-import requests
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Chatbot</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-# Define the model to use for the chatbot
-CHATBOT_MODEL = "openai/gpt-3.5-turbo"
+        .chatbot-container {
+            width: 90%;
+            max-width: 900px;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
 
-# --- OPENROUTER API LOGIC ---
-# The OpenRouter API key will be read from an environment variable.
-# On Hugging Face Spaces, you can set this in the "Secrets" section.
-def get_openrouter_api_key():
-    """Retrieves the OpenRouter API key from environment variables."""
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        return None
-    return api_key
+        .chatbot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e5e5e5;
+        }
 
-def generate_response(message, history):
-    """
-    Sends a message and the chat history to the OpenRouter API to generate a response.
-    
-    Args:
-        message (str): The user's new message.
-        history (list): A list of tuples containing previous user/bot messages.
-    
-    Returns:
-        str: The AI's generated response or an error message.
-    """
-    api_key = get_openrouter_api_key()
-    if not api_key:
-        return "Error: OPENROUTER_API_KEY is not set. Please configure it in the environment secrets."
-        
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+        .chatbot-logo {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: #333;
+        }
 
-    # Construct the messages list for the API call, including the system prompt
-    # and all previous messages from the history.
-    messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
-    for user_msg, bot_msg in history:
-        messages.append({"role": "user", "content": user_msg})
-        messages.append({"role": "assistant", "content": bot_msg})
-    messages.append({"role": "user", "content": message})
+        .chatbot-info .status {
+            color: #666;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
 
-    data = {
-        "model": CHATBOT_MODEL,
-        "messages": messages,
-    }
+        .plus-button {
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
 
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
-        result = response.json()
-        
-        # Extract and return the chatbot's response
-        return result['choices'][0]['message']['content']
+        .chatbot-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
 
-    except requests.exceptions.RequestException as e:
-        return f"An error occurred: {e}"
+        .intro-message {
+            max-width: 500px;
+            margin-bottom: 20px;
+            color: #444;
+        }
 
-# --- GRADIO UI & THEME ---
-# Create a custom theme to replicate the '2025 green glowing' aesthetic.
-custom_theme = gr.themes.Soft(
-    # Set the primary and secondary hues to create the green glow effect
-    primary_hue="emerald",  # Use a vibrant green hue
-    secondary_hue="gray",
-    font=[gr.themes.GoogleFont("DM Sans"), "sans-serif"],
-).set(
-    # Set the background to a deep black
-    body_background_fill="#030712",
-    # Style the text box and submit button to match the theme
-    block_background_fill="#1F2937",
-    block_border_color="#34D399", # Glowing green border
-    block_border_width="2px",
-    block_border_radius="25px",
-    button_background_fill="#34D399",
-    button_background_fill_hover="#10B981",
-    button_text_color="#1F2937",
-    button_border_radius="25px",
-    
-    # Set text colors
-    text_color="#34D399",
-    background_fill_primary="#030712", # Main background color
-    background_fill_secondary="#1F2937",
-)
+        .intro-message h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
 
-# Custom CSS to style the chatbot messages and container, fixing the TypeError.
-custom_css = """
-.gradio-container {
-    background-color: #030712;
-    color: #34D399;
-}
-.gradio-chatbot {
-    background-color: #1F2937;
-    border: none;
-    border-radius: 8px;
-}
-.gradio-chatbot .message.bot {
-    background-color: #111827;
-    border-radius: 10px;
-}
-.gradio-chatbot .message.user {
-    background-color: #374151;
-    border-radius: 10px;
-}
-"""
+        .chat-area {
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
 
-# Use the custom theme with the ChatInterface
-demo = gr.ChatInterface(
-    generate_response,
-    theme=custom_theme,
-    title="My Cyber Chatbot",
-    textbox=gr.Textbox(
-        placeholder="Ask anything",
-        container=False,
-        show_copy_button=True
-    ),
-    retry_btn=None,
-    undo_btn=None,
-    clear_btn="Clear Chat",
-    css=custom_css,
-)
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
 
-# Launch the app
-demo.launch()
+        .user-message {
+            background-color: #f0f0f0;
+            align-self: flex-end;
+        }
+
+        .bot-message {
+            background-color: #e6f7ff;
+            align-self: flex-start;
+        }
+
+        .chatbot-input-form {
+            padding: 16px 24px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .input-container {
+            display: flex;
+            border: 1px solid #e5e5e5;
+            border-radius: 24px;
+            padding: 8px;
+            background-color: #f7f7f7;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            padding: 0 10px;
+        }
+
+        #chat-input:focus {
+            outline: none;
+        }
+
+        .send-button {
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .send-button svg {
+            fill: #fff;
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <header class="chatbot-header">
+            <div class="chatbot-logo">ChatGPT</div>
+            <div class="chatbot-info">
+                <span class="status">Saved memory full</span>
+                <button class="plus-button">+ Get Plus</button>
+            </div>
+        </header>
+
+        <main class="chatbot-main">
+            <div class="intro-message">
+                <h2>Introducing GPT-5</h2>
+                <p>ChatGPT now has our smartest, fastest, most useful model yet, with thinking built in — so you get the best answer, every time.</p>
+            </div>
+            <div class="chat-area">
+                </div>
+        </main>
+
+        <form class="chatbot-input-form" id="chat-form">
+            <div class="input-container">
+                <input type="text" id="chat-input" placeholder="Ask anything" autocomplete="off">
+                <button type="submit" class="send-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white dark:text-black">
+                        <path d="M12 4L3 9L12 14L21 9L12 4ZM12 16V22L21 9L12 16Z" fill="currentColor"></path>
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatArea = document.querySelector('.chat-area');
+            const introMessage = document.querySelector('.intro-message');
+
+            // Replace with your OpenRouter API key
+            const OPENROUTER_API_KEY = 'YOUR_OPENROUTER_API_KEY'; 
+
+            const MODEL_NAME = 'gpt-3.5-turbo';
+
+            const appendMessage = (message, sender) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(`${sender}-message`);
+                messageDiv.textContent = message;
+                chatArea.appendChild(messageDiv);
+                chatArea.scrollTop = chatArea.scrollHeight;
+            };
+
+            const sendMessage = async (userMessage) => {
+                // Hide the intro message when the first message is sent
+                if (introMessage) {
+                    introMessage.style.display = 'none';
+                }
+
+                appendMessage(userMessage, 'user');
+                chatInput.value = '';
+
+                try {
+                    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            model: MODEL_NAME,
+                            messages: [
+                                { role: 'system', content: 'You are a helpful assistant.' },
+                                { role: 'user', content: userMessage }
+                            ],
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error.message || `API error: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const botMessage = data.choices[0].message.content;
+                    appendMessage(botMessage, 'bot');
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    appendMessage('Sorry, I am unable to connect right now. Please try again later.', 'bot');
+                }
+            };
+
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const userMessage = chatInput.value.trim();
+                if (userMessage) {
+                    sendMessage(userMessage);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
