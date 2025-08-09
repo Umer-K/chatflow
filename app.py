@@ -2,7 +2,6 @@ import os
 import requests
 import gradio as gr
 
-# Correctly load API key from environment variable name
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "gpt-3.5-turbo"
@@ -29,14 +28,10 @@ def query_openrouter(messages):
 def chatbot(user_message, history):
     if history is None:
         history = []
-
     history.append({"role": "user", "content": user_message})
     bot_reply = query_openrouter(history)
     history.append({"role": "assistant", "content": bot_reply})
-
-    # Format chat pairs as (user message, bot reply)
     chat_pairs = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
-
     return chat_pairs, history
 
 with gr.Blocks() as demo:
