@@ -36,7 +36,7 @@ def chatbot(user_message, history):
 
 with gr.Blocks(
     css="""
-        /* 2025 Gen Z-inspired aesthetic: creme color palette, clean spacing, modern vibes */
+        /* 2025 Gen Z-inspired aesthetic: creme color palette, road-like chat layout */
         body {
             background: linear-gradient(135deg, #fffaf4 0%, #f8ece0 100%);
             font-family: 'Inter', sans-serif;
@@ -60,32 +60,34 @@ with gr.Blocks(
             scrollbar-color: #d9b99b #fffaf4;
         }
         .gr-chatbot .message {
-            margin: 25px 15px; /* Increased margin for better spacing */
-            padding: 20px 25px; /* Increased padding for better text flow */
-            border-radius: 18px;
-            max-width: 70%;
-            line-height: 1.8; /* Improved line height for readability */
-            white-space: normal; /* Ensure text wraps naturally */
+            margin: 15px 20px; /* Adjusted for balanced spacing */
+            padding: 10px 25px; /* Reduced height, kept width */
+            border-radius: 15px;
+            max-width: 80%; /* Wider layout */
+            min-height: 40px; /* Controlled minimum height */
+            line-height: 1.6;
+            white-space: normal;
+            word-wrap: break-word;
             transition: transform 0.2s ease;
-            word-wrap: break-word; /* Prevent text overflow */
+            display: inline-block; /* Road-like horizontal flow */
         }
         .gr-chatbot .message.user {
             background: linear-gradient(45deg, #d9b99b, #e8d4c0);
             color: #4a4035;
             margin-left: auto;
-            box-shadow: 0 6px 20px rgba(217, 185, 155, 0.3);
+            box-shadow: 0 4px 15px rgba(217, 185, 155, 0.3);
         }
         .gr-chatbot .message.bot {
             background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
             color: #4a4035;
             margin-right: auto;
-            box-shadow: 0 6px 20px rgba(184, 216, 216, 0.3);
+            box-shadow: 0 4px 15px rgba(184, 216, 216, 0.3);
         }
         .gr-textbox {
             background: rgba(255, 250, 244, 0.8);
             border: 2px solid rgba(74, 64, 53, 0.2);
             border-radius: 15px;
-            padding: 18px;
+            padding: 12px 18px;
             color: #4a4035;
             font-size: 16px;
             transition: all 0.3s ease;
@@ -103,7 +105,7 @@ with gr.Blocks(
             color: #4a4035;
             border: none;
             border-radius: 15px;
-            padding: 14px 28px;
+            padding: 12px 24px;
             font-weight: 600;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
