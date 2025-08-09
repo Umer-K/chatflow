@@ -454,11 +454,6 @@ def process_voice_input(audio_file):
         return "No audio received. Please try recording again."
     
     # Placeholder for speech recognition
-    # In a real implementation, you would use libraries like:
-    # - speech_recognition
-    # - whisper
-    # - Google Speech-to-Text API
-    
     return "Voice input received! (Speech recognition would be implemented here with libraries like Whisper or SpeechRecognition)"
 
 def reset_conversation():
@@ -620,8 +615,7 @@ def create_gradio_interface():
     
     with gr.Blocks(
         css=custom_css,
-        title="🏥 Hybrid AI Assistant - Healthcare Billing Expert",
-        theme=gr.themes.Soft()
+        title="🏥 Hybrid AI Assistant - Healthcare Billing Expert"
     ) as demo:
         
         # Header Section
@@ -666,9 +660,8 @@ def create_gradio_interface():
             examples=examples,
             title="",
             description="💬 Start chatting! I can help with healthcare billing codes, general questions, and adapt to your emotional tone.",
-            submit_btn="Send 📤",
-            retry_btn="🔄 Retry",
-            undo_btn="↩️ Undo", 
+            retry_btn="↻ Retry",
+            undo_btn="↺ Undo",
             clear_btn="🗑️ Clear"
         )
         
@@ -785,14 +778,4 @@ demo = create_gradio_interface()
 # No need for manual demo.launch() in Hugging Face Spaces
 if __name__ == "__main__":
     # This block will be executed when running locally
-    # For Hugging Face Spaces, remove this and just export the demo
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=True,
-        debug=True
-    )
-
-# For Hugging Face Spaces deployment, export the demo
-# Uncomment the line below when deploying to Hugging Face Spaces
-# demo.queue().launch()
+    demo.launch(debug=True)
