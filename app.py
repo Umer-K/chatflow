@@ -70,33 +70,42 @@ custom_theme = gr.themes.Soft(
 ).set(
     # Set the background to a deep black
     body_background_fill="#030712",
-    # Customize the chatbot's appearance
-    chatbot_background_color="#1F2937", # Darker gray for chat history
-    chatbot_border_color="transparent",
-    chatbot_border_width="0",
-    chatbot_border_radius="8px",
-    
     # Style the text box and submit button to match the theme
     block_background_fill="#1F2937",
     block_border_color="#34D399", # Glowing green border
     block_border_width="2px",
     block_border_radius="25px",
-
     button_background_fill="#34D399",
     button_background_fill_hover="#10B981",
     button_text_color="#1F2937",
     button_border_radius="25px",
-    
-    # Style the chat messages
-    chat_message_background_color="#111827", # Darker bubble for the assistant
-    chat_message_background_color_user="#374151", # Slightly lighter bubble for the user
-    chat_message_border_radius="10px",
     
     # Set text colors
     text_color="#34D399",
     background_fill_primary="#030712", # Main background color
     background_fill_secondary="#1F2937",
 )
+
+# Custom CSS to style the chatbot messages and container, fixing the TypeError.
+custom_css = """
+.gradio-container {
+    background-color: #030712;
+    color: #34D399;
+}
+.gradio-chatbot {
+    background-color: #1F2937;
+    border: none;
+    border-radius: 8px;
+}
+.gradio-chatbot .message.bot {
+    background-color: #111827;
+    border-radius: 10px;
+}
+.gradio-chatbot .message.user {
+    background-color: #374151;
+    border-radius: 10px;
+}
+"""
 
 # Use the custom theme with the ChatInterface
 demo = gr.ChatInterface(
@@ -111,6 +120,7 @@ demo = gr.ChatInterface(
     retry_btn=None,
     undo_btn=None,
     clear_btn="Clear Chat",
+    css=custom_css,
 )
 
 # Launch the app
