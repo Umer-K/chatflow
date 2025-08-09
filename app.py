@@ -48,230 +48,384 @@ def chatbot_response(message, history):
     
     return history, ""
 
-# Clean, modern CSS
+# Complete 2025 Modern Chatbot CSS
 css = """
-/* Reset and base styles */
+/* Complete Modern 2025 Chatbot Interface */
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 .gradio-container {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
-    min-height: 100vh !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif !important;
+    background: #ffffff !important;
+    height: 100vh !important;
+    overflow: hidden !important;
 }
 
-/* Hide unwanted elements */
-footer, .gr-button-lg, .gradio-container > div > div:last-child {
+/* Hide all Gradio default elements */
+footer, .gr-button-lg, .gradio-container .prose, 
+.gradio-container > div:last-child,
+.gradio-container > .gr-block > div:last-child {
     display: none !important;
 }
 
-/* Main layout */
-.main-wrap {
-    max-width: 1000px !important;
-    margin: 0 auto !important;
-    padding: 20px !important;
+/* Main layout container */
+.main-layout {
+    display: flex !important;
     height: 100vh !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+}
+
+/* Left sidebar */
+.sidebar {
+    width: 260px !important;
+    background: #f8f9fa !important;
+    border-right: 1px solid #e9ecef !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+    flex-shrink: 0 !important;
+}
+
+.sidebar h3 {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #6c757d !important;
+    margin-bottom: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.sidebar-item {
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    margin-bottom: 4px !important;
+    color: #495057 !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    transition: background-color 0.1s ease !important;
+}
+
+.sidebar-item:hover {
+    background: #e9ecef !important;
+}
+
+.sidebar-item.active {
+    background: #e3f2fd !important;
+    color: #1976d2 !important;
+}
+
+/* Main chat area */
+.chat-main {
+    flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
+    max-width: 768px !important;
+    margin: 0 auto !important;
+    height: 100vh !important;
 }
 
-/* Title */
-.title-container h1 {
-    text-align: center !important;
-    color: #2c3e50 !important;
-    font-size: 2.5rem !important;
-    font-weight: 700 !important;
-    margin: 0 0 30px 0 !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1) !important;
+/* Header with logo and name */
+.header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px 24px !important;
+    border-bottom: 1px solid #e9ecef !important;
+    background: #ffffff !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
 }
 
-/* Chat container */
-.chat-wrapper {
+.header-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.logo {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 20px !important;
+}
+
+.header h1 {
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    color: #212529 !important;
+    margin: 0 !important;
+}
+
+/* Chat messages area */
+.messages-container {
     flex: 1 !important;
-    background: white !important;
-    border-radius: 20px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    overflow-y: auto !important;
     padding: 0 !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
+    background: #ffffff !important;
 }
 
-/* Chatbot area */
 .gr-chatbot {
-    flex: 1 !important;
+    height: 100% !important;
     border: none !important;
     background: transparent !important;
-    padding: 20px !important;
-    overflow-y: auto !important;
-    max-height: 500px !important;
-}
-
-.gr-chatbot > div {
-    gap: 15px !important;
+    padding: 24px !important;
 }
 
 /* Message styling */
-.gr-chatbot .user, .gr-chatbot .bot {
-    padding: 12px 18px !important;
+.gr-chatbot > div {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+}
+
+.message-wrapper {
+    display: flex !important;
+    width: 100% !important;
+    animation: fadeIn 0.3s ease-out !important;
+}
+
+/* User messages (right side, blue bubbles) */
+.message-wrapper:has(.user-message) {
+    justify-content: flex-end !important;
+}
+
+.user-message {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    padding: 10px 14px !important;
     border-radius: 18px !important;
-    max-width: 80% !important;
+    border-bottom-right-radius: 4px !important;
+    max-width: 70% !important;
     font-size: 15px !important;
     line-height: 1.4 !important;
-    margin: 5px 0 !important;
     word-wrap: break-word !important;
 }
 
-.gr-chatbot .user {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
-    margin-left: auto !important;
-    border-bottom-right-radius: 5px !important;
+/* AI messages (left side, gray bubbles, wider) */
+.message-wrapper:has(.bot-message) {
+    justify-content: flex-start !important;
 }
 
-.gr-chatbot .bot {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-    color: white !important;
-    margin-right: auto !important;
-    border-bottom-left-radius: 5px !important;
+.bot-message {
+    background: #f1f3f4 !important;
+    color: #3c4043 !important;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    border-bottom-left-radius: 4px !important;
+    max-width: 85% !important;
+    font-size: 15px !important;
+    line-height: 1.5 !important;
+    word-wrap: break-word !important;
+    border: 1px solid #e8eaed !important;
 }
 
-/* Input area */
+/* Input area at bottom */
 .input-section {
-    background: #f8f9fa !important;
-    padding: 20px !important;
+    padding: 16px 24px 24px 24px !important;
+    background: #ffffff !important;
     border-top: 1px solid #e9ecef !important;
+    position: sticky !important;
+    bottom: 0 !important;
 }
 
-.input-row {
-    display: flex !important;
-    gap: 10px !important;
-    align-items: flex-end !important;
+.input-wrapper {
+    position: relative !important;
+    max-width: 100% !important;
 }
 
-/* Text input */
-.message-input {
-    flex: 1 !important;
-    padding: 15px 20px !important;
-    border: 2px solid #e9ecef !important;
-    border-radius: 25px !important;
-    font-size: 16px !important;
-    background: white !important;
-    resize: none !important;
+/* Rounded input box */
+.gr-textbox {
+    width: 100% !important;
+    padding: 12px 52px 12px 16px !important;
+    border: 1px solid #dadce0 !important;
+    border-radius: 24px !important;
+    font-size: 15px !important;
+    background: #ffffff !important;
     outline: none !important;
-    transition: border-color 0.3s ease !important;
+    transition: all 0.15s ease !important;
+    resize: none !important;
+    min-height: 44px !important;
+    max-height: 120px !important;
+    line-height: 1.4 !important;
 }
 
-.message-input:focus {
-    border-color: #667eea !important;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+.gr-textbox:focus {
+    border-color: #1976d2 !important;
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1) !important;
 }
 
-/* Send button - FIXED */
+.gr-textbox::placeholder {
+    color: #5f6368 !important;
+}
+
+/* Embedded arrow send button */
 .send-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
+    position: absolute !important;
+    right: 6px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 16px !important;
+    background: #1976d2 !important;
     border: none !important;
-    border-radius: 50px !important;
-    padding: 15px 30px !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
+    color: #ffffff !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-    min-width: 100px !important;
-    height: 50px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 16px !important;
+    transition: all 0.15s ease !important;
 }
 
 .send-btn:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    background: #1565c0 !important;
+    transform: translateY(-50%) scale(1.05) !important;
 }
 
 .send-btn:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3) !important;
+    background: #0d47a1 !important;
+    transform: translateY(-50%) scale(0.95) !important;
 }
 
-/* Scrollbar */
-.gr-chatbot::-webkit-scrollbar {
+/* Smooth animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom scrollbar */
+.messages-container::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar {
     width: 6px;
 }
 
-.gr-chatbot::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
+.messages-container::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
 }
 
-.gr-chatbot::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 10px;
+.messages-container::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb {
+    background: #dadce0;
+    border-radius: 3px;
 }
 
-.gr-chatbot::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
+.messages-container::-webkit-scrollbar-thumb:hover,
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #bdc1c6;
 }
 
-/* Responsive */
+/* Mobile responsive */
 @media (max-width: 768px) {
-    .main-wrap {
-        padding: 10px !important;
+    .sidebar {
+        display: none !important;
     }
     
-    .title-container h1 {
-        font-size: 2rem !important;
+    .chat-main {
+        max-width: 100% !important;
     }
     
-    .gr-chatbot .user, .gr-chatbot .bot {
+    .user-message {
+        max-width: 80% !important;
+    }
+    
+    .bot-message {
         max-width: 90% !important;
-        font-size: 14px !important;
     }
+    
+    .header, .input-section {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+    
+    .gr-chatbot {
+        padding: 16px !important;
+    }
+}
+
+/* Clean typography */
+.gr-chatbot p {
+    margin: 0 !important;
+}
+
+.gr-chatbot pre {
+    background: #f8f9fa !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    overflow-x: auto !important;
 }
 """
 
-# Create interface
+# Create the complete modern interface
 with gr.Blocks(css=css, title="Aesthetic AI Chatbot") as demo:
     
-    # Title
-    with gr.Column(elem_classes=["title-container"]):
-        gr.Markdown("# 💬 Aesthetic AI Chatbot")
-    
-    # Main chat area
-    with gr.Column(elem_classes=["chat-wrapper"]):
-        chatbot = gr.Chatbot(
-            elem_classes=["gr-chatbot"],
-            show_label=False,
-            container=False,
-            bubble_full_width=False
-        )
+    with gr.Row(elem_classes=["main-layout"]):
+        # Left sidebar
+        with gr.Column(elem_classes=["sidebar"]):
+            gr.Markdown("### Chat History")
+            gr.Markdown('<div class="sidebar-item active">Current Conversation</div>')
+            gr.Markdown('<div class="sidebar-item">Previous Chat 1</div>')
+            gr.Markdown('<div class="sidebar-item">Previous Chat 2</div>')
+            gr.Markdown('<div class="sidebar-item">Previous Chat 3</div>')
+            gr.Markdown("### Settings")
+            gr.Markdown('<div class="sidebar-item">Model Settings</div>')
+            gr.Markdown('<div class="sidebar-item">Export Chat</div>')
         
-        # Input section
-        with gr.Column(elem_classes=["input-section"]):
-            with gr.Row(elem_classes=["input-row"]):
-                msg = gr.Textbox(
-                    placeholder="Type your message here...",
+        # Main chat area
+        with gr.Column(elem_classes=["chat-main"]):
+            # Header with logo and name
+            with gr.Row(elem_classes=["header"]):
+                with gr.Column(elem_classes=["header-content"]):
+                    gr.Markdown('<div class="logo">💬</div><h1>Aesthetic AI Chatbot</h1>', elem_classes=["header-content"])
+            
+            # Messages container
+            with gr.Column(elem_classes=["messages-container"]):
+                chatbot = gr.Chatbot(
+                    elem_classes=["gr-chatbot"],
                     show_label=False,
                     container=False,
-                    scale=4,
-                    elem_classes=["message-input"]
+                    bubble_full_width=False,
+                    show_copy_button=False,
+                    avatar_images=None
                 )
-                send = gr.Button(
-                    "Send",
-                    scale=1,
-                    elem_classes=["send-btn"],
-                    variant="primary"
-                )
+            
+            # Input section with rounded input and embedded send button
+            with gr.Column(elem_classes=["input-section"]):
+                with gr.Column(elem_classes=["input-wrapper"]):
+                    msg = gr.Textbox(
+                        placeholder="Message Aesthetic AI...",
+                        show_label=False,
+                        container=False,
+                        lines=1,
+                        max_lines=6
+                    )
+                    send = gr.Button("↑", elem_classes=["send-btn"])
 
-    # Event handlers
-    msg.submit(chatbot_response, [msg, chatbot], [chatbot, msg])
-    send.click(chatbot_response, [msg, chatbot], [chatbot, msg])
+    # Event handlers with smooth message handling
+    def submit_message(message, history):
+        if not message.strip():
+            return history, message
+        return chatbot_response(message, history)
+
+    msg.submit(submit_message, [msg, chatbot], [chatbot, msg])
+    send.click(submit_message, [msg, chatbot], [chatbot, msg])
 
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
         show_api=False,
-        show_error=True
+        show_error=True,
+        quiet=True
     )
