@@ -292,7 +292,7 @@ class HybridAIAssistant:
             final_response += "\n\n💡 **Need more details?** Feel free to ask specific questions about these codes!"
             return final_response
         else:
-            return self.get_general_response(message, billing_context=True)
+            return self.get_general_response(message, "default_chat", billing_context=True)
     
     def get_empathetic_response_prefix(self, sentiment: SentimentType) -> str:
         """Generate empathetic response based on sentiment"""
@@ -430,15 +430,15 @@ def chat_with_assistant(message: str, history: List[Tuple[str, str]], chat_id: s
     """Main chat function for Gradio ChatInterface"""
     try:
         if not message or not message.strip():
-            return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊", chat_id
+            return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
         
         # Process message and get response
-        response, sentiment = assistant.process_message(message.strip(), chat_id)
-        return response, chat_id
+        response, _ = assistant.process_message(message.strip(), chat_id)
+        return response
         
     except Exception as e:
         logger.error(f"Chat error: {e}")
-        return "I apologize, but I encountered an error processing your message. Please try again!", chat_id
+        return "I apologize, but I encountered an error processing your message. Please try again!"
 
 def start_new_chat():
     """Start a new chat session"""
@@ -460,188 +460,97 @@ def reset_conversation(chat_id: str):
 
 # ============= Examples =============
 examples = [
-    ["What is healthcare billing code A0429?", "chat_default"],
-    ["Can you explain CPT code 99213 in detail?", "chat_default"],
-    ["Tell me about DRG 470", "chat_default"],
-    ["I'm feeling frustrated with this billing issue", "chat_default"],
-    ["This is confusing, can you help me understand?", "chat_default"],
-    ["Thank you so much! This is exactly what I needed!", "chat_default"],
-    ["How does artificial intelligence work?", "chat_default"],
-    ["Give me a simple pasta recipe", "chat_default"],
-    ["Write a short poem about nature", "chat_default"]
+    ["What is healthcare billing code A0429?"],
+    ["Can you explain CPT code 99213 in detail?"],
+    ["Tell me about DRG 470"],
+    ["I'm feeling frustrated with this billing issue"],
+    ["This is confusing, can you help me understand?"],
+    ["Thank you so much! This is exactly what I needed!"],
+    ["How does artificial intelligence work?"],
+    ["Give me a simple pasta recipe"],
+    ["Write a short poem about nature"]
 ]
 
-# ============= Custom CSS for Grok-like UI =============
+# ============= Simplified CSS =============
 custom_css = """
-/* Grok-like UI for Hugging Face Spaces */
 .gradio-container {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    max-width: 1400px !important;
-    margin: 0 auto !important;
-    background: #f5f7fa !important;
-    padding: 1rem !important;
-    display: flex;
-}
-
-/* Sidebar (Left) */
-.sidebar {
-    width: 250px !important;
-    background: #2c2f3b !important;
-    color: white !important;
-    padding: 1rem !important;
-    border-radius: 8px !important;
-    height: calc(100vh - 2rem) !important;
-    overflow-y: auto !important;
-    margin-right: 1rem !important;
-}
-
-.sidebar h2 {
-    font-size: 1.5rem !important;
-    margin-bottom: 1rem !important;
-}
-
-.sidebar select, .sidebar button {
-    width: 100% !important;
-    padding: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
-    border-radius: 5px !important;
-    background: #3b3e4a !important;
-    color: white !important;
-    border: none !important;
-}
-
-.sidebar button:hover {
-    background: #4a4d5a !important;
-}
-
-/* Chat Area (Right) */
-.chat-container {
-    flex-grow: 1 !important;
-    background: white !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-    padding: 1rem !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
 .gradio-chatbot {
-    min-height: 500px !important;
-    font-size: 1.1rem !important;
+    min-height: 500px;
 }
 
 .gradio-chatbot .message {
-    margin-bottom: 1rem !important;
-    padding: 0.8rem !important;
-    border-radius: 8px !important;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 
 .gradio-chatbot .user-message {
-    background: #e6f3ff !important;
-    text-align: right !important;
+    background: #e6f3ff;
 }
 
 .gradio-chatbot .bot-message {
-    background: #f0f0f0 !important;
-    text-align: left !important;
+    background: #f0f0f0;
 }
 
-.chat-input {
-    width: 100% !important;
-    padding: 0.8rem !important;
-    font-size: 1rem !important;
+#chat-input {
+    padding: 12px;
 }
 
-/* Status */
-.status-box {
-    margin-top: 1rem !important;
-    font-size: 0.9rem !important;
-    color: #666 !important;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .gradio-container {
-        flex-direction: column !important;
-    }
-    
-    .sidebar {
-        width: 100% !important;
-        height: auto !important;
-        margin-bottom: 1rem !important;
-    }
-    
-    .chat-container {
-        width: 100% !important;
-    }
+#component-0 {
+    min-height: 600px;
 }
 """
 
 # ============= Main Gradio Interface =============
 
 def create_gradio_interface():
-    """Create the main Gradio interface with Grok-like UI"""
+    """Create a simplified Gradio interface"""
     with gr.Blocks(css=custom_css, title="🏥 Hybrid AI Assistant") as demo:
         # State to track current chat ID
         chat_id_state = gr.State(value=f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         
-        # Main Layout with Sidebar and Chat
-        with gr.Row():
-            # Sidebar (Left)
-            with gr.Column(elem_classes=["sidebar"], scale=1):
-                gr.Markdown("## Chat History")
-                chat_history = gr.Dropdown(
-                    choices=assistant.get_chat_history(),
-                    label="Select Chat",
-                    value=chat_id_state.value,
-                    interactive=True,
-                    allow_custom_value=True
-                )
-                new_chat_btn = gr.Button("New Chat", elem_classes=["custom-button"])
-                reset_btn = gr.Button("Reset Current Chat", elem_classes=["custom-button"])
-            
-            # Chat Area (Right)
-            with gr.Column(elem_classes=["chat-container"], scale=3):
-                gr.Markdown("## 🏥 Hybrid AI Assistant")
-                chatbot = gr.ChatInterface(
-                    fn=chat_with_assistant,
-                    additional_inputs=[chat_id_state],
-                    examples=examples,
-                    title="",
-                    description="💬 Ask about healthcare billing codes or anything else! I'm here to help with a friendly vibe. 😎"
-                )
-                
-                status_output = gr.Textbox(
-                    label="Status",
-                    placeholder="System status will appear here...",
-                    lines=1,
-                    interactive=False,
-                    elem_classes=["status-box"]
-                )
+        # Chat Interface
+        chatbot = gr.ChatInterface(
+            fn=chat_with_assistant,
+            additional_inputs=[chat_id_state],
+            examples=examples,
+            title="🏥 Hybrid AI Assistant",
+            description="💬 Ask about healthcare billing codes or anything else!",
+            retry_btn=None,
+            undo_btn=None,
+            clear_btn="New Chat"
+        )
         
-        # Event Handlers
-        new_chat_btn.click(
+        # Hidden components for chat management
+        with gr.Row(visible=False):
+            new_chat_btn = gr.Button("New Chat")
+            reset_btn = gr.Button("Reset Current Chat")
+            chat_history = gr.Dropdown(
+                choices=assistant.get_chat_history(),
+                label="Select Chat",
+                value=chat_id_state.value,
+                interactive=True
+            )
+        
+        # Event handlers
+        chatbot.clear_btn.click(
             fn=start_new_chat,
-            outputs=[chat_id_state, status_output, chatbot]
-        )
-        reset_btn.click(
-            fn=reset_conversation,
-            inputs=[chat_id_state],
-            outputs=[chat_id_state, status_output, chatbot]
-        )
-        chat_history.change(
-            fn=select_chat,
-            inputs=[chat_history],
-            outputs=[chat_id_state, status_output, chatbot]
+            outputs=[chat_id_state, chatbot.chatbot_state, chatbot.chatbot]
         )
     
     return demo
 
-# ============= Launch Application =============
-
-# Create and configure the interface
+# Create and launch the interface
 demo = create_gradio_interface()
 
-# For Hugging Face Spaces, the app will be launched automatically
-# No need for manual demo.launch() in Hugging Face Spaces
+# For Hugging Face Spaces, we need to explicitly call launch()
 if __name__ == "__main__":
-    # This block will be executed when running locally
     demo.launch(debug=True)
+else:
+    # This is for Hugging Face Spaces deployment
+    demo.launch()
