@@ -1,4 +1,5 @@
 gradio==4.19.2
 requests==2.31.0
-speechrecognition==3.10.0
+SpeechRecognition==3.8.1
 gTTS==2.5.3
+PyAudio==0.2.14
