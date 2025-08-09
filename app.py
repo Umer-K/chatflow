@@ -110,7 +110,7 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Beautiful chat input */
+    /* Beautiful chat input - transparent */
     .stChatInputContainer {
         border: none !important;
         background: transparent !important;
@@ -118,10 +118,11 @@ st.markdown("""
     }
     
     .stChatInputContainer > div {
-        border: 1px solid #d1d5db !important;
+        border: 1px solid rgba(255,255,255,0.3) !important;
         border-radius: 24px !important;
-        background: white !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        background: rgba(255,255,255,0.15) !important;
+        backdrop-filter: blur(10px) !important;
+        box-shadow: none !important;
         padding: 2px !important;
     }
     
@@ -130,13 +131,13 @@ st.markdown("""
         background: transparent !important;
         padding: 12px 20px !important;
         font-size: 1rem !important;
-        color: #2d3748 !important;
+        color: white !important;
         font-family: 'Inter', sans-serif !important;
         resize: none !important;
     }
     
     .stChatInputContainer textarea::placeholder {
-        color: #9ca3af !important;
+        color: rgba(255,255,255,0.7) !important;
         font-weight: 400 !important;
     }
     
