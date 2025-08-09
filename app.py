@@ -26,14 +26,21 @@ st.markdown("""
     header {visibility: hidden;}
     .stDeployButton {display: none;}
     
-    /* User messages on the right */
-    .stChatMessage[data-testid*="user"] {
+    /* User messages (odd positions) on the right */
+    .stChatMessage:nth-child(odd) {
         flex-direction: row-reverse !important;
         margin-left: 20% !important;
         margin-right: 0% !important;
     }
     
-    .stChatMessage[data-testid*="user"] .stMarkdown {
+    /* AI messages (even positions) on the left */
+    .stChatMessage:nth-child(even) {
+        margin-right: 20% !important;
+        margin-left: 0% !important;
+    }
+    
+    /* User message styling (blue, right side) */
+    .stChatMessage:nth-child(odd) .stMarkdown {
         background-color: #007bff !important;
         color: white !important;
         border-radius: 18px 18px 4px 18px !important;
@@ -41,13 +48,8 @@ st.markdown("""
         margin-left: 12px !important;
     }
     
-    /* AI messages on the left */
-    .stChatMessage[data-testid*="assistant"] {
-        margin-right: 20% !important;
-        margin-left: 0% !important;
-    }
-    
-    .stChatMessage[data-testid*="assistant"] .stMarkdown {
+    /* AI message styling (gray, left side) */
+    .stChatMessage:nth-child(even) .stMarkdown {
         background-color: #f8f9fa !important;
         color: #2d3748 !important;
         border-radius: 18px 18px 18px 4px !important;
