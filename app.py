@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 Hybrid AI Assistant - General Purpose + Healthcare Billing Expert
-Enhanced with Emotional UI and Voice Input
+Enhanced with Emotional UI and Voice Input - HUGGING FACE SPACES VERSION
 """
 
 import os
-import sys
 import json
 import logging
 import re
@@ -16,14 +15,13 @@ import requests
 import gradio as gr
 from datetime import datetime
 import random
-import time
-
-# Set up environment
-os.environ['OPENROUTER_API_KEY'] = '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'
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Set up environment - Hugging Face Spaces will handle API keys via secrets
+API_KEY = os.getenv('OPENROUTER_API_KEY', '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')
 
 # ============= Data Classes =============
 
@@ -235,7 +233,7 @@ class SentimentAnalyzer:
 
 class HybridAIAssistant:
     def __init__(self):
-        self.api_key = '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'
+        self.api_key = API_KEY
         self.billing_db = BillingCodesDB()
         self.sentiment_analyzer = SentimentAnalyzer()
         self.context = ConversationContext()
@@ -413,35 +411,66 @@ class HybridAIAssistant:
 # ============= Global Assistant Instance =============
 assistant = HybridAIAssistant()
 
-# ============= Chat Functions =============
+# ============= Chat Functions for Gradio =============
 
-def respond(message, history):
-    """Response function for ChatInterface"""
-    if not message.strip():
-        return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
-    
-    # Process message and get sentiment
-    response, sentiment = assistant.process_message(message)
-    
-    # Update UI based on sentiment (this will be handled by JavaScript)
-    return response
+def chat_with_assistant(message, history):
+    """Main chat function for Gradio ChatInterface"""
+    try:
+        if not message or not message.strip():
+            return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
+        
+        # Process message and get response
+        response, sentiment = assistant.process_message(message.strip())
+        return response
+        
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        return "I apologize, but I encountered an error processing your message. Please try again!"
 
-def process_voice_input(audio):
-    """Process voice input and return text"""
-    if audio is None:
-        return "No audio received. Please try again."
-    
-    # For now, return a placeholder message
-    # In a real implementation, you'd use speech recognition here
-    return "Voice input processed! (Speech recognition would be implemented here)"
+def quick_code_lookup(code):
+    """Quick billing code lookup function"""
+    try:
+        if not code or not code.strip():
+            return "Please enter a billing code to look up."
+        
+        info = assistant.billing_db.lookup(code.strip())
+        if info:
+            result = f"**{info.code} ({info.code_type})**\n\n"
+            result += f"**Description:** {info.description}\n\n"
+            if info.additional_info:
+                result += f"**Details:** {info.additional_info}\n\n"
+            if info.category:
+                result += f"**Category:** {info.category}"
+            return result
+        else:
+            return f"Code '{code.strip()}' not found in database. Try asking in the chat for more help!"
+    except Exception as e:
+        logger.error(f"Code lookup error: {e}")
+        return "Error looking up code. Please try again."
 
-def reset_chat():
+def process_voice_input(audio_file):
+    """Process voice input (placeholder for speech recognition)"""
+    if audio_file is None:
+        return "No audio received. Please try recording again."
+    
+    # Placeholder for speech recognition
+    # In a real implementation, you would use libraries like:
+    # - speech_recognition
+    # - whisper
+    # - Google Speech-to-Text API
+    
+    return "Voice input received! (Speech recognition would be implemented here with libraries like Whisper or SpeechRecognition)"
+
+def reset_conversation():
     """Reset the conversation context"""
-    assistant.reset_context()
-    return []
+    try:
+        assistant.reset_context()
+        return "✅ Conversation reset successfully!", ""
+    except Exception as e:
+        logger.error(f"Reset error: {e}")
+        return "Error resetting conversation.", ""
 
 # ============= Examples =============
-
 examples = [
     "What is healthcare billing code A0429?",
     "Can you explain CPT code 99213 in detail?", 
@@ -454,422 +483,316 @@ examples = [
     "Write a short poem about nature"
 ]
 
-# ============= Create Interface =============
+# ============= Custom CSS for Hugging Face Spaces =============
+custom_css = """
+/* Enhanced Hugging Face Spaces Compatible CSS */
+.gradio-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    padding: 1rem !important;
+}
 
-def create_interface():
-    """Create the Gradio ChatInterface with Emotional UI and Voice Input"""
-    
-    # Enhanced CSS with emotional UI and voice features
-    custom_css = """
-    /* Global Styles */
-    .gradio-container {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
-        max-width: 1200px !important;
-        margin: auto !important;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
-        min-height: 100vh !important;
-        padding: 1rem !important;
-        transition: all 0.5s ease !important;
-    }
-    
-    /* Emotional UI Color Schemes */
-    .sentiment-positive { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important; }
-    .sentiment-very-positive { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important; }
-    .sentiment-negative { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%) !important; }
-    .sentiment-very-negative { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%) !important; }
-    .sentiment-anxious { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important; }
-    .sentiment-frustrated { background: linear-gradient(135deg, #ff8a80 0%, #ffad80 100%) !important; }
-    .sentiment-excited { background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%) !important; }
-    .sentiment-confused { background: linear-gradient(135deg, #a8caba 0%, #5d4e75 100%) !important; }
-    
-    /* Enhanced Header with Mood Indicator */
-    .header-text {
-        text-align: center;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 3rem 2rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
-        position: relative;
-        overflow: hidden;
-        transition: all 0.5s ease;
-    }
-    
-    .header-text::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: pulse 4s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 0.3; }
-        50% { opacity: 0.6; }
-    }
-    
-    /* Mood Indicator */
-    .mood-indicator {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.2);
-        backdrop-filter: blur(10px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        transition: all 0.5s ease;
-        animation: breathe 3s ease-in-out infinite;
-    }
-    
-    @keyframes breathe {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-    }
-    
-    .mood-positive { background: rgba(132, 250, 176, 0.3) !important; }
-    .mood-negative { background: rgba(255, 154, 158, 0.3) !important; }
-    .mood-anxious { background: rgba(255, 236, 210, 0.3) !important; }
-    .mood-excited { background: rgba(255, 216, 155, 0.3) !important; }
-    
-    .header-text h1 {
-        margin: 0;
-        font-size: 3rem;
-        font-weight: 800;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        position: relative;
-        z-index: 1;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-    
-    .header-text p {
-        margin: 1rem 0 0 0;
-        font-size: 1.2rem;
-        opacity: 0.95;
-        position: relative;
-        z-index: 1;
-        font-weight: 300;
-    }
-    
-    .badge {
-        background: rgba(255,255,255,0.25) !important;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.3);
-        animation: glow 2s ease-in-out infinite alternate;
-    }
-    
-    @keyframes glow {
-        from { box-shadow: 0 0 5px rgba(255,255,255,0.3); }
-        to { box-shadow: 0 0 20px rgba(255,255,255,0.6); }
-    }
-    
-    /* Voice Input Button */
-    .voice-btn {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        font-size: 24px !important;
-        margin: 0.5rem !important;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .voice-btn:hover {
-        transform: scale(1.1) !important;
-        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5) !important;
-    }
-    
-    .voice-btn.recording {
-        animation: recordPulse 1s ease-in-out infinite !important;
-        background: linear-gradient(135deg, #ff3030 0%, #ff1010 100%) !important;
-    }
-    
-    @keyframes recordPulse {
-        0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
-        70% { box-shadow: 0 0 0 20px rgba(255, 107, 107, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
-    }
-    
-    /* Chat Interface Styling with Emotional Feedback */
-    .gradio-chatinterface {
-        background: white !important;
-        border-radius: 20px !important;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important;
-        padding: 2rem !important;
-        margin: 1rem 0 !important;
-        backdrop-filter: blur(10px) !important;
-        transition: all 0.5s ease !important;
-    }
-    
-    .gradio-chatinterface.emotional-positive {
-        border: 2px solid rgba(132, 250, 176, 0.5) !important;
-        box-shadow: 0 25px 50px rgba(132, 250, 176, 0.2) !important;
-    }
-    
-    .gradio-chatinterface.emotional-negative {
-        border: 2px solid rgba(255, 154, 158, 0.5) !important;
-        box-shadow: 0 25px 50px rgba(255, 154, 158, 0.2) !important;
-    }
-    
-    /* Enhanced Buttons */
-    .reset-btn {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 1.5rem !important;
-        font-weight: 600 !important;
-        margin: 0.5rem 0 !important;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3) !important;
-    }
-    
-    .reset-btn:hover {
-        background: linear-gradient(135deg, #ff5252 0%, #d32f2f 100%) !important;
-        transform: translateY(-2px) scale(1.02) !important;
-        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4) !important;
-    }
-    
-    /* Example Buttons Enhancement */
-    .gradio-chatinterface .examples .example {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 15px !important;
-        padding: 0.75rem 1rem !important;
-        margin: 0.5rem !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-    }
-    
-    .gradio-chatinterface .examples .example:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        border-color: #667eea !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3) !important;
-    }
-    
-    /* Enhanced Stats Cards */
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .stat-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-        border-radius: 16px;
-        padding: 2rem;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        border: 1px solid #e2e8f0;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    }
-    
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-label {
-        color: #64748b;
-        font-size: 0.9rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    
-    /* Empathy Animations */
-    @keyframes empathyPulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-    }
-    
-    @keyframes supportGlow {
-        0%, 100% { box-shadow: 0 0 10px rgba(102, 126, 234, 0.3); }
-        50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.6); }
-    }
-    
-    .empathy-support {
-        animation: empathyPulse 2s ease-in-out infinite, supportGlow 3s ease-in-out infinite;
-    }
-    
-    /* Voice Recognition Feedback */
-    .voice-feedback {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        background: rgba(102, 126, 234, 0.9);
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 50px;
-        backdrop-filter: blur(10px);
-        z-index: 1000;
-        animation: slideInRight 0.3s ease-out;
-    }
-    
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    
-    /* Enhanced Accordion */
-    .gradio-accordion {
-        background: rgba(255,255,255,0.9) !important;
-        backdrop-filter: blur(10px) !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-        margin: 1.5rem 0 !important;
-    }
-    
-    /* Feature Cards */
-    .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .feature-card {
-        background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 1.5rem;
-        border: 1px solid rgba(255,255,255,0.3);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    }
-    
-    .feature-icon {
+/* Header Styling */
+.header-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.header-banner h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.header-banner p {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Enhanced Buttons */
+.custom-button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.2rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.custom-button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4) !important;
+}
+
+/* Chat Interface */
+.gradio-chatbot {
+    border-radius: 15px !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+    background: white !important;
+}
+
+/* Feature Cards */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.feature-card {
+    background: rgba(255,255,255,0.95);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    text-align: center;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Stats */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-top: 3px solid #667eea;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-banner h1 {
         font-size: 2rem;
-        margin-bottom: 1rem;
     }
     
-    .feature-title {
-        color: #2d3748;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
+    .feature-grid {
+        grid-template-columns: 1fr;
     }
     
-    .feature-desc {
-        color: #64748b;
-        line-height: 1.6;
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
     }
+}
+"""
+
+# ============= Main Gradio Interface =============
+
+def create_gradio_interface():
+    """Create the main Gradio interface optimized for Hugging Face Spaces"""
     
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .gradio-container {
-            padding: 0.5rem !important;
-        }
+    with gr.Blocks(
+        css=custom_css,
+        title="🏥 Hybrid AI Assistant - Healthcare Billing Expert",
+        theme=gr.themes.Soft()
+    ) as demo:
         
-        .header-text h1 {
-            font-size: 2rem;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
+        # Header Section
+        gr.HTML("""
+        <div class="header-banner">
+            <h1>🏥 Hybrid AI Assistant</h1>
+            <p>Your intelligent companion for healthcare billing codes and general assistance</p>
+            <div style="margin-top: 1rem;">
+                <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 15px; margin: 0 0.25rem; font-size: 0.9rem;">💬 General AI</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 15px; margin: 0 0.25rem; font-size: 0.9rem;">🏥 Medical Billing</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 15px; margin: 0 0.25rem; font-size: 0.9rem;">🎭 Emotional AI</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 15px; margin: 0 0.25rem; font-size: 0.9rem;">🎙️ Voice Ready</span>
+            </div>
+        </div>
+        """)
         
-        .header-text {
-            padding: 2rem 1rem;
-        }
+        # Stats Section
+        gr.HTML("""
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Billing Codes</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">9</div>
+                <div class="stat-label">Sentiment Types</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">∞</div>
+                <div class="stat-label">Conversations</div>
+            </div>
+        </div>
+        """)
         
-        .stats-container {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
+        # Main Chat Interface
+        chatbot = gr.ChatInterface(
+            chat_with_assistant,
+            examples=examples,
+            title="",
+            description="💬 Start chatting! I can help with healthcare billing codes, general questions, and adapt to your emotional tone.",
+            submit_btn="Send 📤",
+            retry_btn="🔄 Retry",
+            undo_btn="↩️ Undo", 
+            clear_btn="🗑️ Clear"
+        )
         
-        .stat-card {
-            padding: 1.5rem;
-        }
+        # Additional Tools Section
+        with gr.Row():
+            with gr.Column(scale=1):
+                gr.Markdown("### 🏥 Quick Code Lookup")
+                code_input = gr.Textbox(
+                    label="Enter Billing Code",
+                    placeholder="e.g., A0429, 99213, DRG470...",
+                    lines=1
+                )
+                lookup_btn = gr.Button("🔍 Look up Code", elem_classes=["custom-button"])
+                code_output = gr.Textbox(
+                    label="Code Information",
+                    placeholder="Code details will appear here...",
+                    lines=6,
+                    interactive=False
+                )
+            
+            with gr.Column(scale=1):
+                gr.Markdown("### 🎙️ Voice Input")
+                audio_input = gr.Audio(
+                    sources=["microphone"],
+                    type="filepath",
+                    label="Voice Input"
+                )
+                voice_btn = gr.Button("🎤 Process Voice", elem_classes=["custom-button"])
+                voice_output = gr.Textbox(
+                    label="Voice Processing Result",
+                    placeholder="Voice processing result will appear here...",
+                    lines=3,
+                    interactive=False
+                )
         
-        .feature-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
+        # Features Section
+        gr.HTML("""
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Smart AI Assistant</h3>
+                <p>Advanced AI that understands context and provides intelligent responses.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏥</div>
+                <h3>Healthcare Billing Expert</h3>
+                <p>Comprehensive database of CPT, HCPCS, ICD-10, and DRG codes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎭</div>
+                <h3>Emotional Intelligence</h3>
+                <p>Adapts responses based on your emotional state and tone.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <h3>Voice Input Ready</h3>
+                <p>Framework for voice processing and hands-free interaction.</p>
+            </div>
+        </div>
+        """)
         
-        .mood-indicator {
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-        }
+        # Control Section
+        with gr.Row():
+            reset_btn = gr.Button("🔄 Reset Conversation", elem_classes=["custom-button"])
+            status_output = gr.Textbox(
+                label="Status",
+                placeholder="System status will appear here...",
+                lines=1,
+                interactive=False
+            )
         
-        .voice-btn {
-            width: 50px !important;
-            height: 50px !important;
-            font-size: 20px !important;
-        }
-    }
+        # Usage Information
+        gr.Markdown("""
+        ### 💡 How to Use:
+        - **Healthcare Codes**: Mention any billing code (A0429, 99213, etc.) and get detailed information
+        - **General Questions**: Ask anything - from recipes to complex topics, I'm here to help!
+        - **Emotional Support**: I adapt my tone based on your mood - express how you're feeling
+        - **Voice Input**: Use the voice recorder for hands-free interaction (framework ready)
+        - **Quick Lookup**: Use the code lookup tool for instant billing code information
+        
+        ### 🏥 Supported Code Types:
+        - **CPT Codes**: Current Procedural Terminology (99213, 93000, etc.)
+        - **HCPCS Codes**: Healthcare Common Procedure Coding (A0429, J3420, etc.)  
+        - **ICD-10 Codes**: International Classification of Diseases (Z79.899, etc.)
+        - **DRG Codes**: Diagnosis Related Groups (DRG470, etc.)
+        """)
+        
+        # Event Handlers
+        lookup_btn.click(
+            quick_code_lookup,
+            inputs=[code_input],
+            outputs=[code_output]
+        )
+        
+        voice_btn.click(
+            process_voice_input,
+            inputs=[audio_input],
+            outputs=[voice_output]
+        )
+        
+        reset_btn.click(
+            reset_conversation,
+            outputs=[status_output, code_output]
+        )
     
-    /* Loading Animation */
-    @keyframes shimmer {
-        0% { background-position: -468px 0; }
-        100% { background-position: 468px 0; }
-    }
-    
-    .loading {
-        animation: shimmer 1.5s ease-in-out infinite;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 400% 100%;
-    }
-    
-    /* Sentiment-based message styling */
-    .message-positive {
-        border-left: 4px solid #84fab0 !important;
-        background: linear-gradient(135deg, rgba(132, 250, 176, 0.1) 0%, rgba(143, 211, 244, 0.1) 100%) !important;
-    }
-    
-    .message-negative {
-        border-left: 4px solid #ff9a9e !important;
-        background: linear-gradient(135deg, rgba(255, 154, 158, 0.1) 0%, rgba(254, 207, 239, 0.1) 100%) !important;
-    }
-    
-    .message-anxious {
-        border-left: 4px solid #ffecd2 !important;
-        background: linear-gradient(135deg, rgba(255, 236, 210, 0.1) 0%, rgba(252, 182, 159, 0.1) 100%) !important;
-    }
-    """
+    return demo
+
+# ============= Launch Application =============
+
+# Create and configure the interface
+demo = create_gradio_interface()
+
+# For Hugging Face Spaces, the app will be launched automatically
+# No need for manual demo.launch() in Hugging Face Spaces
+if __name__ == "__main__":
+    # This block will be executed when running locally
+    # For Hugging Face Spaces, remove this and just export the demo
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        share=True,
+        debug=True
+    )
+
+# For Hugging Face Spaces deployment, export the demo
+# Uncomment the line below when deploying to Hugging Face Spaces
+# demo.queue().launch()
