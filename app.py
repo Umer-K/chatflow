@@ -1,7 +1,6 @@
 import requests
 import os
 import json
-import time
 import streamlit as st
 
 # Page configuration
@@ -11,175 +10,21 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Professional styling - ChatGPT inspired
+# Simple styling - just background and centering
 st.markdown("""
 <style>
-    /* Import clean fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
-    
-    /* Global app styling */
     .stApp {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-weight: 400;
     }
     
-    /* Hide Streamlit branding and clutter */
+    .main .block-container {
+        max-width: 800px;
+    }
+    
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display: none;}
-    
-    /* Main container - centered and spacious */
-    .main .block-container {
-        max-width: 800px;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-    
-    /* Professional header styling */
-    .main-title {
-        text-align: center;
-        font-size: 2.5rem;
-        font-weight: 600;
-        color: #2d3748;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.025em;
-    }
-    
-    .main-subtitle {
-        font-size: 1.1rem;
-        color: #718096;
-        margin-bottom: 3rem;
-        font-weight: 400;
-    }
-    
-    /* Welcome message - centered */
-    .welcome-message {
-        text-align: center;
-        font-size: 1.2rem;
-        color: #4a5568;
-        margin: 4rem 0;
-        font-weight: 400;
-        line-height: 1.6;
-    }
-    
-    /* Chat messages styling */
-    .stChatMessage {
-        border: none !important;
-        margin-bottom: 1rem;
-        border-radius: 16px !important;
-    }
-    
-    /* User messages - Right side, blue */
-    .stChatMessage[data-testid*="user"] {
-        flex-direction: row-reverse !important;
-        margin-left: 15% !important;
-        margin-right: 0% !important;
-    }
-    
-    .stChatMessage[data-testid*="user"] .stMarkdown {
-        background-color: #007bff !important;
-        color: white !important;
-        border-radius: 18px 18px 4px 18px !important;
-        padding: 12px 16px !important;
-        margin-left: 12px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-    }
-    
-    /* AI messages - Left side, light gray */
-    .stChatMessage[data-testid*="assistant"] {
-        margin-right: 15% !important;
-        margin-left: 0% !important;
-    }
-    
-    .stChatMessage[data-testid*="assistant"] .stMarkdown {
-        background-color: #f8f9fa !important;
-        color: #2d3748 !important;
-        border-radius: 18px 18px 18px 4px !important;
-        padding: 12px 16px !important;
-        margin-right: 12px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-    
-    /* Hide chat avatars */
-    .stChatMessage img {
-        display: none !important;
-    }
-    
-    /* Completely reset chat input styling */
-    .stChatInputContainer {
-        border: none !important;
-        background: none !important;
-        background-color: transparent !important;
-        padding: 1rem 0 !important;
-    }
-    
-    .stChatInputContainer > div {
-        background: none !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        overflow: visible !important;
-        height: auto !important;
-        min-height: auto !important;
-    }
-    
-    /* Style only the actual input field */
-    .stChatInputContainer textarea {
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 24px !important;
-        background: white !important;
-        padding: 12px 20px !important;
-        font-size: 1rem !important;
-        color: #2d3748 !important;
-        font-family: 'Inter', sans-serif !important;
-        resize: none !important;
-        outline: none !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    
-    .stChatInputContainer textarea::placeholder {
-        color: #a0aec0 !important;
-        font-weight: 400 !important;
-    }
-    
-    .stChatInputContainer textarea:focus {
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: rgba(255,255,255,0.95) !important;
-        border-right: 1px solid #e2e8f0 !important;
-    }
-    
-    /* Clean buttons */
-    .stButton > button {
-        border: 1px solid #d1d5db !important;
-        border-radius: 8px !important;
-        background: white !important;
-        color: #374151 !important;
-        font-weight: 500 !important;
-        transition: all 0.2s !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-    }
-    
-    .stButton > button:hover {
-        background: #f9fafb !important;
-        border-color: #9ca3af !important;
-    }
-    
-    /* Status indicators */
-    .stSuccess, .stError, .stWarning {
-        border-radius: 8px !important;
-        border: none !important;
-        font-weight: 500 !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -247,11 +92,11 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
     except Exception as e:
         yield f"Sorry, I encountered an error. Please try again."
 
-# Clean, professional header
-st.markdown('<h1 class="main-title">AI Assistant</h1>', unsafe_allow_html=True)
-st.markdown('<p class="main-subtitle">Ask me anything</p>', unsafe_allow_html=True)
+# Simple header
+st.title("AI Assistant")
+st.caption("Ask me anything")
 
-# Sidebar (collapsed by default)
+# Sidebar
 with st.sidebar:
     st.header("Settings")
     
@@ -285,17 +130,14 @@ with st.sidebar:
 
 # Show welcome message when no messages
 if not st.session_state.messages:
-    st.markdown(
-        '<div class="welcome-message">How can I help you today?</div>',
-        unsafe_allow_html=True
-    )
+    st.info("How can I help you today?")
 
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input with inviting placeholder
+# Chat input
 if prompt := st.chat_input("Ask anything..."):
     # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
