@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Simple styling
+# Enhanced styling with fixed transparent input
 st.markdown("""
 <style>
     .stApp {
@@ -19,9 +19,9 @@ st.markdown("""
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Hide Streamlit stuff */
-    #MainMenu, footer, header {visibility: hidden;}
-    .stDeployButton {display: none;}
+    /* Hide Streamlit elements */
+    #MainMenu, footer, header { visibility: hidden; }
+    .stDeployButton { display: none; }
     
     /* Clean header */
     .main-title {
@@ -46,7 +46,7 @@ st.markdown("""
         margin: 4rem 0;
     }
     
-    /* User messages - Right, blue */
+    /* User messages - Right aligned, blue */
     .stChatMessage[data-testid*="user"] {
         flex-direction: row-reverse !important;
         margin-left: 15% !important;
@@ -60,7 +60,7 @@ st.markdown("""
         margin-left: 12px !important;
     }
     
-    /* AI messages - Left, gray */
+    /* AI messages - Left aligned, gray */
     .stChatMessage[data-testid*="assistant"] {
         margin-right: 15% !important;
     }
@@ -75,26 +75,47 @@ st.markdown("""
     }
     
     /* Hide avatars */
-    .stChatMessage img {display: none !important;}
-    
-    /* Glass input */
-    .stChatInputContainer > div {
-        border: 1px solid rgba(255,255,255,0.3) !important;
-        border-radius: 24px !important;
-        background: rgba(255,255,255,0.15) !important;
-        backdrop-filter: blur(10px) !important;
+    .stChatMessage img { display: none !important; }
+
+    /* Chat Input: Full Glass Fix */
+    .stChatInputContainer,
+    .stChatInputContainer div,
+    .stChatInputContainer div:focus-within,
+    .stChatInputContainer div:hover {
+        background: transparent !important;
+        border: none !important;
         box-shadow: none !important;
     }
-    
+
+    /* Outer input container styling */
+    .stChatInputContainer > div {
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border-radius: 24px !important;
+        background: rgba(255, 255, 255, 0.15) !important;
+        backdrop-filter: blur(10px) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* The actual textarea */
     .stChatInputContainer textarea {
         background: transparent !important;
         color: white !important;
         border: none !important;
         padding: 12px 20px !important;
+        font-size: 16px;
+        resize: none;
     }
-    
+
+    /* Placeholder */
     .stChatInputContainer textarea::placeholder {
-        color: rgba(255,255,255,0.7) !important;
+        color: rgba(255, 255, 255, 0.7) !important;
+        opacity: 1;
+    }
+
+    /* Focus state */
+    .stChatInputContainer textarea:focus {
+        outline: none !important;
+        box-shadow: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -146,7 +167,7 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
                                 yield full_response
                     except:
                         continue
-    except:
+    except Exception as e:
         yield "Sorry, something went wrong."
 
 # Header
@@ -177,7 +198,7 @@ with st.sidebar:
 if not st.session_state.messages:
     st.markdown('<div class="welcome-message">How can I help you today?</div>', unsafe_allow_html=True)
 
-# Chat messages
+# Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
