@@ -36,20 +36,20 @@ def chatbot(user_message, history):
 
 with gr.Blocks(
     css="""
-        /* 2025 Gen Z-inspired aesthetic: bold colors, neumorphic elements, futuristic vibes */
+        /* 2025 Gen Z-inspired aesthetic: creme color palette, clean spacing, modern vibes */
         body {
-            background: linear-gradient(135deg, #1e1e2f 0%, #2a2a4a 100%);
+            background: linear-gradient(135deg, #f5e9dd 0%, #e8d8c4 100%);
             font-family: 'Inter', sans-serif;
-            color: #ffffff;
+            color: #3c2f2f;
         }
         .gr-block {
             max-width: 800px;
-            margin: 20px auto;
+            margin: 40px auto;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 245, 230, 0.9);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-            padding: 20px;
+            box-shadow: 0 8px 32px rgba(60, 47, 47, 0.1);
+            padding: 30px;
         }
         .gr-chatbot {
             background: transparent;
@@ -57,83 +57,85 @@ with gr.Blocks(
             height: 500px;
             overflow-y: auto;
             scrollbar-width: thin;
-            scrollbar-color: #ff6bcb #2a2a4a;
+            scrollbar-color: #d4a373 #f5e9dd;
         }
         .gr-chatbot .message {
-            margin: 10px 0;
-            padding: 12px 18px;
+            margin: 20px 10px; /* Increased margin for better spacing */
+            padding: 15px 20px; /* Increased padding for better text flow */
             border-radius: 15px;
-            max-width: 80%;
+            max-width: 75%;
+            line-height: 1.6; /* Improved line height for readability */
+            white-space: pre-wrap; /* Ensure text wraps correctly */
             transition: transform 0.2s ease;
         }
         .gr-chatbot .message.user {
-            background: linear-gradient(45deg, #ff6bcb, #ffb3d9);
-            color: #1e1e2f;
+            background: linear-gradient(45deg, #d4a373, #e8c39e);
+            color: #3c2f2f;
             margin-left: auto;
-            box-shadow: 0 4px 15px rgba(255, 107, 203, 0.3);
+            box-shadow: 0 4px 15px rgba(212, 163, 115, 0.3);
         }
         .gr-chatbot .message.bot {
-            background: linear-gradient(45deg, #00f2fe, #4facfe);
-            color: #1e1e2f;
+            background: linear-gradient(45deg, #a8dadc, #c9e4de);
+            color: #3c2f2f;
             margin-right: auto;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            box-shadow: 0 4px 15px rgba(168, 218, 220, 0.3);
         }
         .gr-textbox {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 12px;
-            color: #ffffff;
+            background: rgba(255, 245, 230, 0.7);
+            border: 1px solid rgba(60, 47, 47, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            color: #3c2f2f;
             font-size: 16px;
             transition: all 0.3s ease;
         }
         .gr-textbox:focus {
-            border-color: #ff6bcb;
-            box-shadow: 0 0 10px rgba(255, 107, 203, 0.5);
-            background: rgba(255, 255, 255, 0.15);
+            border-color: #d4a373;
+            box-shadow: 0 0 10px rgba(212, 163, 115, 0.5);
+            background: rgba(255, 245, 230, 0.9);
         }
         .gr-textbox::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(60, 47, 47, 0.5);
         }
         .gr-button {
-            background: linear-gradient(45deg, #ff6bcb, #ffb3d9);
-            color: #1e1e2f;
+            background: linear-gradient(45deg, #d4a373, #e8c39e);
+            color: #3c2f2f;
             border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
+            border-radius: 12px;
+            padding: 12px 24px;
             font-weight: 600;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .gr-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(255, 107, 203, 0.4);
+            box-shadow: 0 4px 15px rgba(212, 163, 115, 0.4);
         }
         h1 {
-            font-size: 28px;
+            font-size: 30px;
             text-align: center;
-            background: linear-gradient(45deg, #ff6bcb, #00f2fe);
+            background: linear-gradient(45deg, #d4a373, #a8dadc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         /* Custom scrollbar for modern look */
         ::-webkit-scrollbar {
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #2a2a4a;
+            background: #f5e9dd;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #ff6bcb;
+            background: #d4a373;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #ffb3d9;
+            background: #e8c39e;
         }
     """
 ) as demo:
-    gr.Markdown("# ✨ Vibey AI Chatbot ✨")
+    gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")
     chatbot_ui = gr.Chatbot(elem_classes=["gr-chatbot"])
     user_input = gr.Textbox(placeholder="Drop your message here, bestie! 👾", show_label=False)
     state = gr.State([])
