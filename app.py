@@ -17,123 +17,104 @@ st.set_page_config(
     }
 )
 
-# Custom CSS for modern 2025 design with latest Streamlit compatibility
+# Custom CSS matching the clean gradient design
 st.markdown("""
 <style>
-    /* Import modern font */
+    /* Import clean font */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* Global styling */
+    /* Global styling - Clean gradient background */
     .stApp {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        min-height: 100vh;
     }
     
     /* Main container */
     .main .block-container {
-        padding-top: 2rem;
+        padding-top: 3rem;
         padding-bottom: 2rem;
-        max-width: 900px;
+        max-width: 800px;
+        margin: 0 auto;
     }
     
-    /* Title styling */
+    /* Title styling - Clean and centered */
     .main-header {
         text-align: center;
-        color: white;
-        font-weight: 700;
-        font-size: 3rem;
-        margin-bottom: 0.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        animation: glow 2s ease-in-out infinite alternate;
+        color: #2c3e50;
+        font-weight: 500;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        letter-spacing: -0.02em;
     }
     
-    @keyframes glow {
-        from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.2); }
-        to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 30px rgba(255,255,255,0.4); }
-    }
-    
-    .sub-header {
-        text-align: center;
-        color: rgba(255,255,255,0.8);
-        font-size: 1.2rem;
-        margin-bottom: 2rem;
-        font-weight: 400;
-    }
-    
-    /* Chat container - Updated for Streamlit 1.48.0 */
+    /* Chat messages */
     .stChatMessage {
         border-radius: 20px !important;
         margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
     
-    /* User messages */
+    /* User messages - Clean white */
     .stChatMessage[data-testid*="user"] {
-        background: linear-gradient(135deg, #667eea, #764ba2) !important;
-        color: white !important;
+        background: white !important;
+        margin-left: 20% !important;
     }
     
     .stChatMessage[data-testid*="user"] .stMarkdown {
-        color: white !important;
+        color: #2c3e50 !important;
     }
     
-    /* Assistant messages */
+    /* Assistant messages - Soft white with subtle shadow */
     .stChatMessage[data-testid*="assistant"] {
         background: rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid rgba(0,0,0,0.1);
+        margin-right: 20% !important;
     }
     
-    /* Chat input styling - Updated for latest version */
+    /* Chat input styling - Rounded and clean */
     .stChatInputContainer > div {
-        background: rgba(255,255,255,0.9) !important;
-        border-radius: 30px !important;
-        border: 2px solid transparent !important;
-        backdrop-filter: blur(15px) !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
-        transition: all 0.3s ease !important;
+        background: white !important;
+        border-radius: 25px !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+        max-width: 600px !important;
+        margin: 0 auto !important;
     }
     
-    .stChatInputContainer > div:focus-within {
-        border-color: #667eea !important;
-        box-shadow: 0 0 25px rgba(102, 126, 234, 0.4) !important;
-        transform: translateY(-2px) !important;
+    .stChatInputContainer textarea {
+        border: none !important;
+        background: transparent !important;
+        font-family: 'Inter', sans-serif !important;
+        color: #2c3e50 !important;
     }
     
-    /* Sidebar styling */
+    .stChatInputContainer textarea::placeholder {
+        color: #95a5a6 !important;
+    }
+    
+    /* Sidebar - Clean and minimal */
     .css-1d391kg {
-        background: rgba(255,255,255,0.1) !important;
-        backdrop-filter: blur(15px) !important;
-        border-radius: 20px !important;
+        background: rgba(255,255,255,0.3) !important;
+        backdrop-filter: blur(10px) !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
     }
     
-    /* Button styling */
+    /* Buttons - Soft and clean */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea, #764ba2) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 30px !important;
-        padding: 0.75rem 2rem !important;
-        font-weight: 600 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3) !important;
+        background: white !important;
+        color: #2c3e50 !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        border-radius: 15px !important;
+        padding: 0.5rem 1.5rem !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4) !important;
-    }
-    
-    /* Metrics styling */
-    .metric-container {
-        background: rgba(255,255,255,0.1);
-        border-radius: 15px;
-        padding: 1rem;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        margin-bottom: 1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        transform: translateY(-1px) !important;
     }
     
     /* Hide Streamlit branding */
@@ -142,46 +123,42 @@ st.markdown("""
     header {visibility: hidden;}
     .stDeployButton {display:none;}
     
-    /* Improved scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.1);
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        border-radius: 10px;
-    }
-    
-    /* Loading animation */
-    .stSpinner {
-        border-top: 3px solid #667eea !important;
-    }
-    
-    /* Success/Error messages */
+    /* Success/Error messages - Clean styling */
     .stSuccess {
-        background: rgba(34, 197, 94, 0.1) !important;
-        border: 1px solid rgba(34, 197, 94, 0.3) !important;
-        border-radius: 15px !important;
-        backdrop-filter: blur(10px) !important;
+        background: rgba(46, 204, 113, 0.1) !important;
+        border: 1px solid rgba(46, 204, 113, 0.2) !important;
+        border-radius: 10px !important;
+        color: #27ae60 !important;
     }
     
     .stError {
-        background: rgba(239, 68, 68, 0.1) !important;
-        border: 1px solid rgba(239, 68, 68, 0.3) !important;
-        border-radius: 15px !important;
-        backdrop-filter: blur(10px) !important;
+        background: rgba(231, 76, 60, 0.1) !important;
+        border: 1px solid rgba(231, 76, 60, 0.2) !important;
+        border-radius: 10px !important;
+        color: #e74c3c !important;
     }
     
     .stInfo {
-        background: rgba(59, 130, 246, 0.1) !important;
-        border: 1px solid rgba(59, 130, 246, 0.3) !important;
-        border-radius: 15px !important;
-        backdrop-filter: blur(10px) !important;
+        background: rgba(52, 152, 219, 0.1) !important;
+        border: 1px solid rgba(52, 152, 219, 0.2) !important;
+        border-radius: 10px !important;
+        color: #3498db !important;
+    }
+    
+    /* Metric containers */
+    .metric-container {
+        background: rgba(255,255,255,0.6);
+        border-radius: 10px;
+        padding: 1rem;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255,255,255,0.3);
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    /* Avatar styling */
+    .stChatMessage img {
+        border-radius: 50% !important;
     }
 </style>
 """, unsafe_allow_html=True)
