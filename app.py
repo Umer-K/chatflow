@@ -36,7 +36,7 @@ def chatbot(user_message, history):
 
 with gr.Blocks(
     css="""
-        /* Compact 2025 Gen Z aesthetic: creme palette, Instagram-inspired spacing */
+        /* Instagram-inspired chat layout with creme palette */
         body {
             background: linear-gradient(135deg, #fffaf4 0%, #f8ece0 100%);
             font-family: 'Inter', sans-serif;
@@ -56,7 +56,7 @@ with gr.Blocks(
         .gr-chatbot {
             background: transparent;
             border: none;
-            height: 80vh; /* Maximize chat area height */
+            height: 80vh;
             min-height: 400px;
             overflow-y: auto;
             scrollbar-width: thin;
@@ -64,28 +64,44 @@ with gr.Blocks(
             padding: 5px 0;
         }
         .gr-chatbot .message {
-            margin: 5px 15px;
+            margin: 10px 20px 10px 60px; /* Vertical spacing: 10px, adjusted for avatar */
             padding: 8px 15px;
             border-radius: 10px;
-            max-width: 65%;
-            min-height: 25px;
+            max-width: 300px; /* Matches Instagram text message width */
+            min-height: 40px; /* Minimum height for single line */
             line-height: 1.4;
             white-space: normal;
             word-wrap: break-word;
             transition: transform 0.2s ease;
             display: inline-block;
+            position: relative;
         }
         .gr-chatbot .message.user {
             background: linear-gradient(45deg, #d9b99b, #e8d4c0);
             color: #4a4035;
             margin-left: auto;
+            margin-right: 60px; /* Space for avatar */
             box-shadow: 0 3px 10px rgba(217, 185, 155, 0.2);
         }
         .gr-chatbot .message.bot {
             background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
             color: #4a4035;
             margin-right: auto;
+            margin-left: 60px; /* Space for avatar */
             box-shadow: 0 3px 10px rgba(184, 216, 216, 0.2);
+        }
+        .gr-chatbot .message .avatar {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            top: -10px;
+        }
+        .gr-chatbot .message.user .avatar {
+            right: -50px;
+        }
+        .gr-chatbot .message.bot .avatar {
+            left: -50px;
         }
         .gr-textbox {
             background: rgba(255, 250, 244, 0.8);
@@ -95,6 +111,7 @@ with gr.Blocks(
             color: #4a4035;
             font-size: 14px;
             width: 70%;
+            max-width: 300px; /* Matches message bubble width */
             height: 35px;
             margin: 5px 0;
             transition: all 0.3s ease;
@@ -157,6 +174,4 @@ with gr.Blocks(
     state = gr.State([])
 
     user_input.submit(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
-    submit_btn.click(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
-
-demo.launch()
+    submit_btn.click(chatbot, inputs=[user_input, state
