@@ -6,7 +6,7 @@ import json
 # Set your OpenRouter API key as a secret on Hugging Face Spaces
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-# Define the custom CSS for the full-screen layout
+# Custom CSS for the full-screen, glowing Gen Z aesthetic
 custom_css = """
 /* The main container for the Gradio app, fills the entire viewport */
 .gradio-container {
@@ -24,14 +24,22 @@ custom_css = """
     flex-direction: column;
 }
 
+/* Base theme colors for our glow */
+:root {
+    --glowing-accent: #00ffff;  /* Neon cyan */
+    --glowing-shadow: 0 0 10px var(--glowing-accent), inset 0 0 5px var(--glowing-accent);
+}
+
 /* Chat message bubbles */
 .gradio-app .message-wrap.user {
-    background-color: var(--button-primary-background-color) !important;
-    color: var(--button-primary-text-color) !important;
+    background-color: var(--glowing-accent) !important;
+    color: #000000 !important; /* Use black text for contrast on cyan */
+    border-radius: 12px;
 }
 .gradio-app .message-wrap.bot {
     background-color: var(--background-fill-primary) !important;
     color: var(--body-text-color) !important;
+    border-radius: 12px;
 }
 
 /* Input area styling */
@@ -45,19 +53,18 @@ custom_css = """
     background-color: var(--background-fill-primary);
     border-radius: var(--radius-xl);
     border: 1px solid var(--border-color-primary);
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); /* Subtle initial glow */
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
+    transition: box-shadow 0.3s ease;
+}
+.gradio-app .input-box:focus-within {
+    border-color: var(--glowing-accent);
+    box-shadow: var(--glowing-shadow); /* Stronger glow on focus */
 }
 
 /* Input text box */
-.gradio-app .scroll-hide::-webkit-scrollbar {
-    width: 0;
-}
-.gradio-app .scroll-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
 .gradio-app textarea {
     border: none !important;
     background: transparent !important;
@@ -70,15 +77,22 @@ custom_css = """
 
 /* Send button styling */
 .gradio-app .send-button {
-    background: none !important;
-    border: none !important;
+    background: var(--background-fill-primary) !important;
+    border: 1px solid var(--border-color-primary) !important;
+    border-radius: var(--radius-xl) !important;
     cursor: pointer;
     padding: 0.5rem;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); /* Subtle initial glow */
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.gradio-app .send-button:hover {
+    border-color: var(--glowing-accent) !important;
+    box-shadow: var(--glowing-shadow) !important; /* Stronger glow on hover */
 }
 .gradio-app .send-button svg {
     width: 20px;
     height: 20px;
-    fill: var(--body-text-color) !important;
+    fill: var(--glowing-accent) !important;
 }
 
 /* Hide the default chat header */
@@ -88,10 +102,6 @@ custom_css = """
 """
 
 def generate_response(message, history):
-    """
-    Function to call the OpenRouter API with the user's message and stream the response.
-    gr.ChatInterface automatically manages the history list of tuples for you.
-    """
     if not OPENROUTER_API_KEY:
         yield "Error: OPENROUTER_API_KEY not set. Please set this environment variable."
         return
@@ -102,20 +112,18 @@ def generate_response(message, history):
         "Content-Type": "application/json"
     }
 
-    # Prepare the message history for the API call
     messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
     for user_msg, bot_msg in history:
         messages.append({"role": "user", "content": user_msg})
-        if bot_msg: # Only append if not an empty string for the last message
+        if bot_msg:
             messages.append({"role": "assistant", "content": bot_msg})
     
-    # Append the new user message
     messages.append({"role": "user", "content": message})
 
     data = {
         "model": "openai/gpt-3.5-turbo",
         "messages": messages,
-        "stream": True # Enable streaming
+        "stream": True
     }
 
     try:
@@ -141,7 +149,6 @@ def generate_response(message, history):
     except Exception as e:
         yield f"An unexpected error occurred: {e}"
 
-# The simplified Gradio interface using the ChatInterface component
 demo = gr.ChatInterface(
     fn=generate_response,
     theme="abidlabs/Halving",
