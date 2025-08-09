@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Hybrid AI Assistant - General Purpose + Healthcare Billing Expert
-Enhanced with Emotional UI and Voice Input - HUGGING FACE SPACES VERSION
+Enhanced with Emotional UI and Voice Input/Output - HUGGING FACE SPACES VERSION
 """
 
 import os
@@ -15,6 +15,9 @@ import requests
 import gradio as gr
 from datetime import datetime
 import random
+import speech_recognition as sr
+from gtts import gTTS
+from io import BytesIO
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -427,34 +430,41 @@ def chat_with_assistant(message, history):
         logger.error(f"Chat error: {e}")
         return "I apologize, but I encountered an error processing your message. Please try again!"
 
-def quick_code_lookup(code):
-    """Quick billing code lookup function"""
-    try:
-        if not code or not code.strip():
-            return "Please enter a billing code to look up."
-        
-        info = assistant.billing_db.lookup(code.strip())
-        if info:
-            result = f"**{info.code} ({info.code_type})**\n\n"
-            result += f"**Description:** {info.description}\n\n"
-            if info.additional_info:
-                result += f"**Details:** {info.additional_info}\n\n"
-            if info.category:
-                result += f"**Category:** {info.category}"
-            return result
-        else:
-            return f"Code '{code.strip()}' not found in database. Try asking in the chat for more help!"
-    except Exception as e:
-        logger.error(f"Code lookup error: {e}")
-        return "Error looking up code. Please try again."
-
 def process_voice_input(audio_file):
-    """Process voice input (placeholder for speech recognition)"""
+    """Process voice input using speech recognition"""
     if audio_file is None:
-        return "No audio received. Please try recording again."
+        return "No audio received. Please try recording again.", None
     
-    # Placeholder for speech recognition
-    return "Voice input received! (Speech recognition would be implemented here with libraries like Whisper or SpeechRecognition)"
+    try:
+        # Initialize recognizer
+        recognizer = sr.Recognizer()
+        
+        # Load audio file
+        with sr.AudioFile(audio_file) as source:
+            audio = recognizer.record(source)
+        
+        # Recognize speech using Google Speech Recognition
+        text = recognizer.recognize_google(audio)
+        logger.info(f"Recognized text: {text}")
+        
+        # Process the recognized text through the assistant
+        response, sentiment = assistant.process_message(text.strip())
+        
+        # Generate audio response
+        tts = gTTS(text=response, lang='en')
+        audio_buffer = BytesIO()
+        tts.write_to_fp(audio_buffer)
+        audio_buffer.seek(0)
+        
+        return response, audio_buffer
+    except sr.UnknownValueError:
+        return "Sorry, I couldn't understand the audio. Please try speaking clearly or typing your question.", None
+    except sr.RequestError as e:
+        logger.error(f"Speech recognition error: {e}")
+        return "Error processing audio. Please try again or type your question.", None
+    except Exception as e:
+        logger.error(f"Voice processing error: {e}")
+        return "Error processing voice input. Please try again.", None
 
 def reset_conversation():
     """Reset the conversation context"""
@@ -662,37 +672,20 @@ def create_gradio_interface():
             description="💬 Start chatting! I can help with healthcare billing codes, general questions, and adapt to your emotional tone."
         )
         
-        # Additional Tools Section
+        # Voice Input/Output Section
+        gr.Markdown("### 🎙️ Voice Interaction")
         with gr.Row():
-            with gr.Column(scale=1):
-                gr.Markdown("### 🏥 Quick Code Lookup")
-                code_input = gr.Textbox(
-                    label="Enter Billing Code",
-                    placeholder="e.g., A0429, 99213, DRG470...",
-                    lines=1
-                )
-                lookup_btn = gr.Button("🔍 Look Up Code", elem_classes=["custom-button"])
-                code_output = gr.Textbox(
-                    label="Code Information",
-                    placeholder="Code details will appear here...",
-                    lines=6,
-                    interactive=False
-                )
-            
-            with gr.Column(scale=1):
-                gr.Markdown("### 🎙️ Voice Input")
-                audio_input = gr.Audio(
-                    sources=["microphone"],
-                    type="filepath",
-                    label="Voice Input"
-                )
-                voice_btn = gr.Button("🎤 Process Voice", elem_classes=["custom-button"])
-                voice_output = gr.Textbox(
-                    label="Voice Processing Result",
-                    placeholder="Voice processing result will appear here...",
-                    lines=3,
-                    interactive=False
-                )
+            audio_input = gr.Audio(
+                sources=["microphone"],
+                type="filepath",
+                label="Speak to the Assistant"
+            )
+            audio_output = gr.Audio(
+                label="Assistant's Response",
+                type="filepath",
+                interactive=False
+            )
+        voice_btn = gr.Button("🎤 Process Voice", elem_classes=["custom-button"])
         
         # Features Section
         gr.HTML("""
@@ -714,8 +707,8 @@ def create_gradio_interface():
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🎙️</div>
-                <h3>Voice Input Ready</h3>
-                <p>Framework for voice processing and hands-free interaction.</p>
+                <h3>Voice Interaction</h3>
+                <p>Hands-free interaction with voice input and output.</p>
             </div>
         </div>
         """)
@@ -730,41 +723,20 @@ def create_gradio_interface():
                 interactive=False
             )
         
-        # Usage Information
-        gr.Markdown("""
-        ### 💡 How to Use:
-        - **Healthcare Codes**: Mention any billing code (A0429, 99213, etc.) and get detailed information
-        - **General Questions**: Ask anything - from recipes to complex topics, I'm here to help!
-        - **Emotional Support**: I adapt my tone based on your mood - express how you're feeling
-        - **Voice Input**: Use the voice recorder for hands-free interaction (framework ready)
-        - **Quick Lookup**: Use the code lookup tool for instant billing code information
-        
-        ### 🏥 Supported Code Types:
-        - **CPT Codes**: Current Procedural Terminology (99213, 93000, etc.)
-        - **HCPCS Codes**: Healthcare Common Procedure Coding (A0429, J3420, etc.)  
-        - **ICD-10 Codes**: International Classification of Diseases (Z79.899, etc.)
-        - **DRG Codes**: Diagnosis Related Groups (DRG470, etc.)
-        """)
-        
         # Event Handlers
-        lookup_btn.click(
-            quick_code_lookup,
-            inputs=[code_input],
-            outputs=[code_output]
-        )
-        
         voice_btn.click(
             process_voice_input,
             inputs=[audio_input],
-            outputs=[voice_output]
+            outputs=[chatbot, audio_output]
         )
         
         reset_btn.click(
             reset_conversation,
-            outputs=[status_output, code_output]
+            outputs=[status_output, chatbot]
         )
     
     return demo
+
 # ============= Launch Application =============
 
 # Create and configure the interface
