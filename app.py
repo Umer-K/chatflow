@@ -271,39 +271,34 @@ def stream_ai_response(messages):
 st.markdown('<h1 class="main-header">🤖 AI Assistant 2025</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">✨ Powered by Advanced AI • Modern Streamlit Interface ✨</p>', unsafe_allow_html=True)
 
-# Main chat interface
-col1, col2, col3 = st.columns([1, 4, 1])
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"], avatar="🤖" if message["role"] == "assistant" else "👨‍💻"):
+        st.markdown(message["content"])
 
-with col2:
-    # Display chat messages
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"], avatar="🤖" if message["role"] == "assistant" else "👨‍💻"):
-            st.markdown(message["content"])
+# Chat input - MUST be at root level, not inside columns
+if prompt := st.chat_input("💭 Type your message here... ✨"):
+    # Add user message
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.message_count += 1
     
-    # Chat input
-    if prompt := st.chat_input("💭 Type your message here... ✨", key="chat_input"):
-        # Add user message
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        st.session_state.message_count += 1
+    with st.chat_message("user", avatar="👨‍💻"):
+        st.markdown(prompt)
+    
+    # Generate AI response
+    with st.chat_message("assistant", avatar="🤖"):
+        message_placeholder = st.empty()
         
-        with st.chat_message("user", avatar="👨‍💻"):
-            st.markdown(prompt)
+        # Stream the response
+        full_response = ""
+        for response_chunk in stream_ai_response(st.session_state.messages):
+            full_response = response_chunk
+            message_placeholder.markdown(full_response + "▌")
         
-        # Generate AI response
-        with st.chat_message("assistant", avatar="🤖"):
-            message_placeholder = st.empty()
-            
-            # Stream the response
-            full_response = ""
-            for response_chunk in stream_ai_response(st.session_state.messages):
-                full_response = response_chunk
-                message_placeholder.markdown(full_response + "▌")
-            
-            message_placeholder.markdown(full_response)
-            
-        # Add assistant response to session state
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-        st.session_state.message_count += 1
+        message_placeholder.markdown(full_response)
+        
+    # Add assistant response to session state
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 # Enhanced sidebar
 with st.sidebar:
