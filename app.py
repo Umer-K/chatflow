@@ -71,18 +71,22 @@ def generate_response_streaming(message, history):
     except requests.exceptions.RequestException as e:
         yield f"An error occurred: {e}"
 
-# Create a custom theme with ChatGPT-like font
-custom_theme = gr.themes.Glass().set(
+# Create a modern 2025 theme with clean fonts
+modern_2025_theme = gr.themes.Soft().set(
     font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
-    font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "ui-monospace", "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "Monaco", "monospace"]
+    font_mono=[gr.themes.GoogleFont("JetBrains Mono"), "ui-monospace", "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", "Monaco", "monospace"],
+    primary_hue="blue",
+    secondary_hue="gray",
+    neutral_hue="slate",
+    radius_size="lg",
 )
 
 # Create the ChatInterface with streaming and supported features
 demo = gr.ChatInterface(
     generate_response_streaming,
     type="messages",  # Use the modern messages format
-    theme=custom_theme,  # Use custom theme with better fonts
-    title="My Glassy Streaming Chatbot",
+    theme=modern_2025_theme,  # Modern 2025 theme
+    title="AI Assistant 2025",
     flagging_mode="manual",  # Enable manual flagging like in the example
     flagging_options=["Like", "Spam", "Inappropriate", "Other"],  # Flagging options
     save_history=True,  # Save chat history
