@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# White background
+# White background + chat message positioning
 st.markdown("""
 <style>
     .stApp {
@@ -25,6 +25,41 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display: none;}
+    
+    /* User messages on the right */
+    .stChatMessage[data-testid*="user"] {
+        flex-direction: row-reverse !important;
+        margin-left: 20% !important;
+        margin-right: 0% !important;
+    }
+    
+    .stChatMessage[data-testid*="user"] .stMarkdown {
+        background-color: #007bff !important;
+        color: white !important;
+        border-radius: 18px 18px 4px 18px !important;
+        padding: 12px 16px !important;
+        margin-left: 12px !important;
+    }
+    
+    /* AI messages on the left */
+    .stChatMessage[data-testid*="assistant"] {
+        margin-right: 20% !important;
+        margin-left: 0% !important;
+    }
+    
+    .stChatMessage[data-testid*="assistant"] .stMarkdown {
+        background-color: #f8f9fa !important;
+        color: #2d3748 !important;
+        border-radius: 18px 18px 18px 4px !important;
+        padding: 12px 16px !important;
+        margin-right: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    
+    /* Hide chat avatars */
+    .stChatMessage img {
+        display: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
