@@ -6,11 +6,22 @@ import streamlit as st
 # Page configuration
 st.set_page_config(page_title="AI Assistant", page_icon="💬")
 
-# Just background
+# Background + hide the white container
 st.markdown("""
 <style>
     .stApp {
         background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    
+    /* Hide the main container background */
+    .main .block-container {
+        background: transparent !important;
+        padding: 1rem !important;
+    }
+    
+    /* Make chat input area transparent */
+    .stChatInputContainer {
+        background: transparent !important;
     }
 </style>
 """, unsafe_allow_html=True)
