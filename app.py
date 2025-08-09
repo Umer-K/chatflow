@@ -26,36 +26,17 @@ st.markdown("""
     header {visibility: hidden;}
     .stDeployButton {display: none;}
     
-    /* User messages (odd positions) on the right */
+    /* User messages on the right - keep original colors */
     .stChatMessage:nth-child(odd) {
         flex-direction: row-reverse !important;
         margin-left: 20% !important;
         margin-right: 0% !important;
     }
     
-    /* AI messages (even positions) on the left */
+    /* AI messages on the left - keep original colors */
     .stChatMessage:nth-child(even) {
         margin-right: 20% !important;
         margin-left: 0% !important;
-    }
-    
-    /* User message styling (blue, right side) */
-    .stChatMessage:nth-child(odd) .stMarkdown {
-        background-color: #007bff !important;
-        color: white !important;
-        border-radius: 18px 18px 4px 18px !important;
-        padding: 12px 16px !important;
-        margin-left: 12px !important;
-    }
-    
-    /* AI message styling (gray, left side) */
-    .stChatMessage:nth-child(even) .stMarkdown {
-        background-color: #f8f9fa !important;
-        color: #2d3748 !important;
-        border-radius: 18px 18px 18px 4px !important;
-        padding: 12px 16px !important;
-        margin-right: 12px !important;
-        border: 1px solid #e2e8f0 !important;
     }
     
     /* Hide chat avatars */
