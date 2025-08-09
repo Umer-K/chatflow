@@ -20,7 +20,11 @@ try:
 except ImportError:
     sr = None
     logging.warning("speech_recognition not available; voice input will be disabled")
-from gtts import gTTS
+try:
+    from gtts import gTTS
+except ImportError:
+    gTTS = None
+    logging.warning("gTTS not available; voice output will be disabled")
 from io import BytesIO
 
 # Configure logging
@@ -439,8 +443,8 @@ def process_voice_input(audio_file):
     if audio_file is None:
         return "No audio received. Please try recording again.", None
     
-    if sr is None:
-        return "Voice recognition is not available in this environment. Please type your question.", None
+    if sr is None or gTTS is None:
+        return "Voice interaction is not available in this environment. Please type your question.", None
     
     try:
         # Initialize recognizer
@@ -732,13 +736,13 @@ def create_gradio_interface():
         
         # Event Handlers
         voice_btn.click(
-            process_voice_input,
+            fn=process_voice_input,
             inputs=[audio_input],
             outputs=[chatbot, audio_output]
         )
         
         reset_btn.click(
-            reset_conversation,
+            fn=reset_conversation,
             outputs=[status_output, chatbot]
         )
     
