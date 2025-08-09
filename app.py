@@ -64,11 +64,11 @@ with gr.Blocks(
             padding: 5px 0;
         }
         .gr-chatbot .message {
-            margin: 10px 20px 10px 60px; /* Vertical spacing: 10px, adjusted for avatar */
+            margin: 10px 20px 10px 60px;
             padding: 8px 15px;
             border-radius: 10px;
-            max-width: 300px; /* Matches Instagram text message width */
-            min-height: 40px; /* Minimum height for single line */
+            max-width: 300px;
+            min-height: 40px;
             line-height: 1.4;
             white-space: normal;
             word-wrap: break-word;
@@ -80,14 +80,14 @@ with gr.Blocks(
             background: linear-gradient(45deg, #d9b99b, #e8d4c0);
             color: #4a4035;
             margin-left: auto;
-            margin-right: 60px; /* Space for avatar */
+            margin-right: 60px;
             box-shadow: 0 3px 10px rgba(217, 185, 155, 0.2);
         }
         .gr-chatbot .message.bot {
             background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
             color: #4a4035;
             margin-right: auto;
-            margin-left: 60px; /* Space for avatar */
+            margin-left: 60px;
             box-shadow: 0 3px 10px rgba(184, 216, 216, 0.2);
         }
         .gr-chatbot .message .avatar {
@@ -111,7 +111,7 @@ with gr.Blocks(
             color: #4a4035;
             font-size: 14px;
             width: 70%;
-            max-width: 300px; /* Matches message bubble width */
+            max-width: 300px;
             height: 35px;
             margin: 5px 0;
             transition: all 0.3s ease;
@@ -174,4 +174,6 @@ with gr.Blocks(
     state = gr.State([])
 
     user_input.submit(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
-    submit_btn.click(chatbot, inputs=[user_input, state
+    submit_btn.click(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])  # Fixed syntax error
+
+demo.launch()
