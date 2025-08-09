@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 Hybrid AI Assistant - General Purpose + Healthcare Billing Expert
-Gradio ChatInterface with Grok-like UI - HUGGING FACE SPACES VERSION
+Gradio ChatInterface with Grok-like UI (Text-Only) - HUGGING FACE SPACES VERSION
 """
 
 import os
-import json
 import logging
 import re
 from typing import Dict, Optional, Tuple, List, Any
@@ -15,17 +14,6 @@ import requests
 import gradio as gr
 from datetime import datetime
 import random
-try:
-    import whisper
-except ImportError:
-    whisper = None
-    logging.warning("whisper not available; voice input will be disabled")
-try:
-    from gtts import gTTS
-except ImportError:
-    gTTS = None
-    logging.warning("gTTS not available; voice output will be disabled")
-from io import BytesIO
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -452,37 +440,6 @@ def chat_with_assistant(message: str, history: List[Tuple[str, str]], chat_id: s
         logger.error(f"Chat error: {e}")
         return "I apologize, but I encountered an error processing your message. Please try again!", chat_id
 
-def process_voice_input(audio_file, chat_id: str):
-    """Process voice input using Whisper"""
-    if audio_file is None:
-        return "No audio received. Please try recording again.", None, chat_id
-    
-    if whisper is None or gTTS is None:
-        return "Voice interaction is not available in this environment. Please type your question.", None, chat_id
-    
-    try:
-        # Load Whisper model
-        model = whisper.load_model("base")
-        
-        # Transcribe audio
-        result = model.transcribe(audio_file)
-        text = result["text"]
-        logger.info(f"Recognized text: {text}")
-        
-        # Process the recognized text through the assistant
-        response, sentiment = assistant.process_message(text.strip(), chat_id)
-        
-        # Generate audio response
-        tts = gTTS(text=response, lang='en')
-        audio_buffer = BytesIO()
-        tts.write_to_fp(audio_buffer)
-        audio_buffer.seek(0)
-        
-        return response, audio_buffer, chat_id
-    except Exception as e:
-        logger.error(f"Voice processing error: {e}")
-        return "Error processing voice input. Please try again.", None, chat_id
-
 def start_new_chat():
     """Start a new chat session"""
     new_chat_id = f"chat_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -491,7 +448,8 @@ def start_new_chat():
 def select_chat(chat_id: str):
     """Load a selected chat from history"""
     context = assistant.get_context(chat_id)
-    history = [(msg['content'], msg['content']) for msg in context.messages if msg['role'] == 'user' and msg['content'] in [m['content'] for m in context.messages if m['role'] == 'assistant']]
+    history = [(msg['content'], next((m['content'] for m in context.messages if m['role'] == 'assistant' and m['content'] != msg['content']), None)) 
+               for msg in context.messages if msg['role'] == 'user']
     return chat_id, f"Loaded chat: {chat_id}", history
 
 def reset_conversation(chat_id: str):
@@ -502,15 +460,15 @@ def reset_conversation(chat_id: str):
 
 # ============= Examples =============
 examples = [
-    "What is healthcare billing code A0429?",
-    "Can you explain CPT code 99213 in detail?", 
-    "Tell me about DRG 470",
-    "I'm feeling frustrated with this billing issue",
-    "This is confusing, can you help me understand?",
-    "Thank you so much! This is exactly what I needed!",
-    "How does artificial intelligence work?",
-    "Give me a simple pasta recipe",
-    "Write a short poem about nature"
+    ["What is healthcare billing code A0429?", "chat_default"],
+    ["Can you explain CPT code 99213 in detail?", "chat_default"],
+    ["Tell me about DRG 470", "chat_default"],
+    ["I'm feeling frustrated with this billing issue", "chat_default"],
+    ["This is confusing, can you help me understand?", "chat_default"],
+    ["Thank you so much! This is exactly what I needed!", "chat_default"],
+    ["How does artificial intelligence work?", "chat_default"],
+    ["Give me a simple pasta recipe", "chat_default"],
+    ["Write a short poem about nature", "chat_default"]
 ]
 
 # ============= Custom CSS for Grok-like UI =============
@@ -592,28 +550,6 @@ custom_css = """
     font-size: 1rem !important;
 }
 
-/* Voice Section */
-.voice-section {
-    margin-top: 1rem !important;
-    display: flex !important;
-    gap: 1rem !important;
-}
-
-.custom-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    border: none !important;
-    border-radius: 8px !important;
-    color: white !important;
-    padding: 0.6rem 1.2rem !important;
-    font-weight: 600 !important;
-    transition: all 0.3s ease !important;
-}
-
-.custom-button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
-}
-
 /* Status */
 .status-box {
     margin-top: 1rem !important;
@@ -656,7 +592,8 @@ def create_gradio_interface():
                     choices=assistant.get_chat_history(),
                     label="Select Chat",
                     value=chat_id_state.value,
-                    interactive=True
+                    interactive=True,
+                    allow_custom_value=True
                 )
                 new_chat_btn = gr.Button("New Chat", elem_classes=["custom-button"])
                 reset_btn = gr.Button("Reset Current Chat", elem_classes=["custom-button"])
@@ -671,22 +608,6 @@ def create_gradio_interface():
                     title="",
                     description="💬 Ask about healthcare billing codes or anything else! I'm here to help with a friendly vibe. 😎"
                 )
-                
-                # Voice Interaction (Optional)
-                if whisper is not None and gTTS is not None:
-                    gr.Markdown("### 🎙️ Voice Interaction")
-                    with gr.Row(elem_classes=["voice-section"]):
-                        audio_input = gr.Audio(
-                            sources=["microphone"],
-                            type="filepath",
-                            label="Speak to the Assistant"
-                        )
-                        audio_output = gr.Audio(
-                            label="Assistant's Response",
-                            type="filepath",
-                            interactive=False
-                        )
-                        voice_btn = gr.Button("🎤 Process Voice", elem_classes=["custom-button"])
                 
                 status_output = gr.Textbox(
                     label="Status",
@@ -711,12 +632,6 @@ def create_gradio_interface():
             inputs=[chat_history],
             outputs=[chat_id_state, status_output, chatbot]
         )
-        if whisper is not None and gTTS is not None:
-            voice_btn.click(
-                fn=process_voice_input,
-                inputs=[audio_input, chat_id_state],
-                outputs=[chatbot, audio_output, chat_id_state]
-            )
     
     return demo
 
