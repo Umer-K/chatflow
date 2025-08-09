@@ -108,23 +108,28 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Fixed chat input styling - removed problematic background */
+    /* Completely reset chat input styling */
     .stChatInputContainer {
         border: none !important;
-        background: transparent !important;
+        background: none !important;
+        background-color: transparent !important;
         padding: 1rem 0 !important;
     }
     
     .stChatInputContainer > div {
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 24px !important;
-        background: white !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
-        overflow: hidden !important;
+        background: none !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        height: auto !important;
+        min-height: auto !important;
     }
     
+    /* Style only the actual input field */
     .stChatInputContainer textarea {
-        border: none !important;
+        border: 2px solid #e2e8f0 !important;
+        border-radius: 24px !important;
         background: white !important;
         padding: 12px 20px !important;
         font-size: 1rem !important;
@@ -132,6 +137,9 @@ st.markdown("""
         font-family: 'Inter', sans-serif !important;
         resize: none !important;
         outline: none !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     
     .stChatInputContainer textarea::placeholder {
