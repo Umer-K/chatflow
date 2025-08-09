@@ -1,2 +1,4 @@
 gradio==4.19.2
 requests==2.31.0
+speech_recognition==3.10.0
+gTTS==2.5.3
