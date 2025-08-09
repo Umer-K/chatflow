@@ -7,7 +7,6 @@ import json
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 # Custom CSS to replicate the ChatGPT front page and chat UI
-# This CSS now includes the subtle background gradient, refined search bar, and updated text sizes.
 custom_css = """
 /* Body and main container styles */
 .gradio-container {
@@ -148,6 +147,7 @@ def generate_response(message, history):
     if not OPENROUTER_API_KEY:
         error_message = "Error: OPENROUTER_API_KEY not set. Please set this environment variable."
         history.append((message, error_message))
+        # Ensure we return three values: history, history, ""
         yield history, history, ""
         return
 
