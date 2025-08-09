@@ -148,7 +148,19 @@ with st.sidebar:
         "openai/gpt-3.5-turbo",
         "openai/gpt-4",
         "anthropic/claude-3-haiku",
-        "google/gemini-pro"
+        "google/gemini-pro",
+        "meta-llama/llama-3.1-8b-instruct:free",
+        "meta-llama/llama-3.1-70b-instruct:free",
+        "meta-llama/llama-3.2-3b-instruct:free",
+        "meta-llama/llama-3.2-1b-instruct:free",
+        "qwen/qwen-2-7b-instruct:free",
+        "microsoft/phi-3-medium-4k-instruct:free",
+        "microsoft/phi-3-mini-128k-instruct:free",
+        "huggingface/zephyr-7b-beta:free",
+        "openchat/openchat-7b:free",
+        "gryphe/mythomist-7b:free",
+        "undi95/toppy-m-7b:free",
+        "openrouter/auto"
     ]
     
     selected_model = st.selectbox("Model", models, index=0)
