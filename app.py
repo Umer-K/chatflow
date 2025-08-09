@@ -6,55 +6,167 @@ import time
 
 # Page configuration
 st.set_page_config(
-    page_title="AI Assistant 2025",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="AI Assistant",
+    page_icon="💬",
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
-# Simple CSS for chat layout - User right, AI left
+# Professional styling - ChatGPT inspired
 st.markdown("""
 <style>
-    /* User messages - Right side */
+    /* Import clean fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    
+    /* Global app styling */
+    .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-weight: 400;
+    }
+    
+    /* Hide Streamlit branding and clutter */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display: none;}
+    
+    /* Main container - centered and spacious */
+    .main .block-container {
+        max-width: 800px;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Professional header styling */
+    .main-title {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.025em;
+    }
+    
+    .main-subtitle {
+        text-align: center;
+        font-size: 1.1rem;
+        color: #718096;
+        margin-bottom: 3rem;
+        font-weight: 400;
+    }
+    
+    /* Welcome message - centered */
+    .welcome-message {
+        text-align: center;
+        font-size: 1.2rem;
+        color: #4a5568;
+        margin: 4rem 0;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+    
+    /* Chat messages styling */
+    .stChatMessage {
+        border: none !important;
+        margin-bottom: 1rem;
+        border-radius: 16px !important;
+    }
+    
+    /* User messages - Right side, blue */
     .stChatMessage[data-testid*="user"] {
         flex-direction: row-reverse !important;
-        margin-left: 20% !important;
+        margin-left: 15% !important;
         margin-right: 0% !important;
     }
     
     .stChatMessage[data-testid*="user"] .stMarkdown {
-        background-color: #007bff !important;
+        background: #0066cc !important;
         color: white !important;
         border-radius: 18px 18px 4px 18px !important;
         padding: 12px 16px !important;
-        margin-left: 8px !important;
-        margin-right: 0px !important;
+        margin-left: 12px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
     }
     
-    /* AI messages - Left side (default) */
+    /* AI messages - Left side, light gray */
     .stChatMessage[data-testid*="assistant"] {
-        margin-right: 20% !important;
+        margin-right: 15% !important;
         margin-left: 0% !important;
     }
     
     .stChatMessage[data-testid*="assistant"] .stMarkdown {
-        background-color: #f1f3f4 !important;
-        color: #333 !important;
+        background: #f8f9fa !important;
+        color: #2d3748 !important;
         border-radius: 18px 18px 18px 4px !important;
         padding: 12px 16px !important;
-        margin-right: 8px !important;
-        margin-left: 0px !important;
+        margin-right: 12px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+        border: 1px solid #e2e8f0 !important;
     }
     
-    /* Hide avatars for cleaner look */
+    /* Hide chat avatars */
     .stChatMessage img {
         display: none !important;
     }
     
-    /* Clean chat input */
+    /* Beautiful chat input */
     .stChatInputContainer {
-        border-top: 1px solid #e0e0e0;
-        padding-top: 1rem;
+        border: none !important;
+        background: transparent !important;
+        padding: 2rem 0 !important;
+    }
+    
+    .stChatInputContainer > div {
+        border: 1px solid #d1d5db !important;
+        border-radius: 24px !important;
+        background: white !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        padding: 2px !important;
+    }
+    
+    .stChatInputContainer textarea {
+        border: none !important;
+        background: transparent !important;
+        padding: 12px 20px !important;
+        font-size: 1rem !important;
+        color: #2d3748 !important;
+        font-family: 'Inter', sans-serif !important;
+        resize: none !important;
+    }
+    
+    .stChatInputContainer textarea::placeholder {
+        color: #9ca3af !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: rgba(255,255,255,0.95) !important;
+        border-right: 1px solid #e2e8f0 !important;
+    }
+    
+    /* Clean buttons */
+    .stButton > button {
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
+        background: white !important;
+        color: #374151 !important;
+        font-weight: 500 !important;
+        transition: all 0.2s !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    }
+    
+    .stButton > button:hover {
+        background: #f9fafb !important;
+        border-color: #9ca3af !important;
+    }
+    
+    /* Status indicators */
+    .stSuccess, .stError, .stWarning {
+        border-radius: 8px !important;
+        border: none !important;
+        font-weight: 500 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -68,7 +180,6 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 @st.cache_data(ttl=300)
 def check_api_status():
-    """Simple API check"""
     if not OPENROUTER_API_KEY:
         return "No API Key"
     try:
@@ -80,9 +191,8 @@ def check_api_status():
         return "Error"
 
 def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
-    """Get AI response"""
     if not OPENROUTER_API_KEY:
-        return "❌ No API key found. Please add OPENROUTER_API_KEY to environment variables."
+        return "No API key found. Please add OPENROUTER_API_KEY to environment variables."
     
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -90,7 +200,7 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
         "Content-Type": "application/json"
     }
     
-    api_messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
+    api_messages = [{"role": "system", "content": "You are a helpful AI assistant. Provide clear and helpful responses."}]
     api_messages.extend(messages)
     
     data = {
@@ -123,24 +233,24 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
                     except json.JSONDecodeError:
                         continue
     except Exception as e:
-        yield f"❌ Error: {str(e)[:100]}..."
+        yield f"Sorry, I encountered an error. Please try again."
 
-# Header
-st.title("🤖 AI Assistant")
-st.caption("Simple chat interface")
+# Clean, professional header
+st.markdown('<h1 class="main-title">AI Assistant</h1>', unsafe_allow_html=True)
+st.markdown('<p class="main-subtitle">Ask me anything</p>', unsafe_allow_html=True)
 
-# Simple sidebar
+# Sidebar (collapsed by default)
 with st.sidebar:
     st.header("Settings")
     
     # API Status
     status = check_api_status()
     if status == "Connected":
-        st.success("✅ API Connected")
+        st.success("API Connected")
     elif status == "No API Key":
-        st.error("❌ No API Key")
+        st.error("No API Key")
     else:
-        st.warning("⚠️ Connection Issue")
+        st.warning("Connection Issue")
     
     st.divider()
     
@@ -152,31 +262,29 @@ with st.sidebar:
         "google/gemini-pro"
     ]
     
-    selected_model = st.selectbox("Model", models)
+    selected_model = st.selectbox("Model", models, index=0)
     
     st.divider()
     
     # Controls
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🗑️ Clear", use_container_width=True):
-            st.session_state.messages = []
-            st.rerun()
-    
-    with col2:
-        if st.button("🔄 Refresh", use_container_width=True):
-            st.rerun()
-    
-    # Stats
-    st.metric("Messages", len(st.session_state.messages))
+    if st.button("Clear Chat", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
+# Show welcome message when no messages
+if not st.session_state.messages:
+    st.markdown(
+        '<div class="welcome-message">How can I help you today?</div>',
+        unsafe_allow_html=True
+    )
 
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input
-if prompt := st.chat_input("Type your message..."):
+# Chat input with inviting placeholder
+if prompt := st.chat_input("Ask anything..."):
     # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -197,7 +305,3 @@ if prompt := st.chat_input("Type your message..."):
     
     # Add AI response to messages
     st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-# Simple footer
-st.markdown("---")
-st.markdown("🤖 **AI Assistant 2025** | Built with Streamlit")
