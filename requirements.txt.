@@ -1,4 +1,2 @@
 gradio==4.19.2
 requests==2.31.0
-openai-whisper==20231117
-gTTS==2.5.3
