@@ -507,11 +507,15 @@ def create_interface():
         
         # Main chat interface
         chatbot_ui = gr.Chatbot(
-            value=[[None, "👋 **Hello! I'm your AI Assistant!**\n\nI can help you with:\n\n🏥 **Healthcare Billing Codes** - I'm an expert in CPT, HCPCS, ICD-10, and DRG codes\n💬 **General Conversation** - Ask me anything!\n📚 **Learning & Education** - Help with various topics\n✍️ **Writing & Creation** - Stories, emails, ideas\n🔧 **Problem Solving** - Let's work through challenges together\n\n**Try asking:**\n• 'What is billing code A0429?'\n• 'Help me write an email'\n• 'Explain quantum physics simply'\n• 'What's the weather like?'\n\nHow can I assist you today? 😊"]],
+            value=[
+                {
+                    "role": "assistant",
+                    "content": "👋 **Hello! I'm your AI Assistant!**\n\nI can help you with:\n\n🏥 **Healthcare Billing Codes** - I'm an expert in CPT, HCPCS, ICD-10, and DRG codes\n💬 **General Conversation** - Ask me anything!\n📚 **Learning & Education** - Help with various topics\n✍️ **Writing & Creation** - Stories, emails, ideas\n🔧 **Problem Solving** - Let's work through challenges together\n\n**Try asking:**\n• 'What is billing code A0429?'\n• 'Help me write an email'\n• 'Explain quantum physics simply'\n• 'What's the weather like?'\n\nHow can I assist you today? 😊"
+                }
+            ],
             elem_id="chatbot",
             show_label=False,
             type="messages",
-            bubble_full_width=False,
             height=500
         )
         
@@ -603,12 +607,11 @@ def create_interface():
         
         def clear_chat():
             assistant.reset_context()
-            welcome = """👋 **Chat cleared! Ready for a new conversation.**
-
-I'm here to help with anything you need - from healthcare billing codes to general questions!
-
-What would you like to know? 😊"""
-            return [[None, welcome]]
+            welcome_msg = {
+                "role": "assistant",
+                "content": "👋 **Chat cleared! Ready for a new conversation.**\n\nI'm here to help with anything you need - from healthcare billing codes to general questions!\n\nWhat would you like to know? 😊"
+            }
+            return [welcome_msg]
         
         # Connect events
         msg.submit(respond, [msg, chatbot_ui], [msg, chatbot_ui])
