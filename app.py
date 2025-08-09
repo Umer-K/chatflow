@@ -35,10 +35,19 @@ def generate_response(message, history):
     except requests.exceptions.RequestException as e:
         return f"An error occurred: {e}"
 
-# Use the Soft theme
+# Create a custom theme with a gradient background
+custom_theme = gr.themes.Soft(
+    primary_hue="blue",
+    secondary_hue="gray",
+    font=[gr.themes.GoogleFont("DM Sans"), "sans-serif"],
+).set(
+    body_background_fill="linear-gradient(to bottom right, #fce0e6, #f3e9f4)"
+)
+
+# Use the custom theme
 demo = gr.ChatInterface(
     generate_response,
-    theme=gr.themes.Soft(),
+    theme=custom_theme,
     title="My Soft Chatbot"
 )
 
