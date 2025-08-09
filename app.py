@@ -15,7 +15,11 @@ import requests
 import gradio as gr
 from datetime import datetime
 import random
-import speech_recognition as sr
+try:
+    import speech_recognition as sr
+except ImportError:
+    sr = None
+    logging.warning("speech_recognition not available; voice input will be disabled")
 from gtts import gTTS
 from io import BytesIO
 
@@ -434,6 +438,9 @@ def process_voice_input(audio_file):
     """Process voice input using speech recognition"""
     if audio_file is None:
         return "No audio received. Please try recording again.", None
+    
+    if sr is None:
+        return "Voice recognition is not available in this environment. Please type your question.", None
     
     try:
         # Initialize recognizer
