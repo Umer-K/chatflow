@@ -1,234 +1,239 @@
-import os
-import requests
 import gradio as gr
+import requests
+import os
 
-# --- (Your API key and function logic remains the same) ---
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "gpt-3.5-turbo"
+# Set your OpenRouter API key.
+# It's best practice to use environment variables for keys.
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-if not OPENROUTER_API_KEY:
-    raise ValueError("OPENROUTER_API_KEY environment variable not set. Please set it before running.")
-
-headers = {
-    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-    "Content-Type": "application/json"
-}
-
-def query_openrouter(messages):
-    payload = {
-        "model": MODEL,
-        "messages": messages
-    }
-    response = requests.post(OPENROUTER_URL, json=payload, headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"OpenRouter API error {response.status_code}: {response.text}")
-    data = response.json()
-    return data["choices"][0]["message"]["content"]
-
-def chatbot_response(message, history):
-    if not message.strip():
-        # Returning chatbot, "" clears the textbox on empty submission
-        return history, ""
-        
-    # Convert history to API format
-    api_messages = []
-    for h in history:
-        if h[0]:  # User message
-            api_messages.append({"role": "user", "content": h[0]})
-        if h[1]:  # Assistant message              
-            api_messages.append({"role": "assistant", "content": h[1]})
-            
-    # Add current message
-    api_messages.append({"role": "user", "content": message})
-    
-    # Get response
-    bot_reply = query_openrouter(api_messages)
-    
-    # Add to history
-    history.append((message, bot_reply)) # Use tuple for history
-    
-    # Return updated history and clear the textbox
-    return history, ""
-
-# --- (CSS is defined in the next block) ---
-css = """
-/* Modern 2025 AI Chatbot - CORRECTED CSS */
-
-/* --- General App Styling --- */
+# Custom CSS to replicate the dark theme and layout
+custom_css = """
+/* The main container for the entire Gradio app */
 .gradio-container {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    background-color: #ffffff !important;
-    max-width: 800px !important; /* Center the main content */
-    margin: auto !important; /* Center the main content */
-    height: 100vh !important;
     display: flex !important;
-    flex-direction: column !important;
-    border: 1px solid #e5e7eb;
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Styles for the sidebar - a column on the left */
+#sidebar {
+    width: 260px;
+    background-color: #1e1f22;
+    padding: 1rem;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The new chat button */
+#new-chat-button {
+    border: 1px solid #4e4f52;
+    padding: 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: #dbdee1;
+}
+#new-chat-button:hover {
+    background-color: #35373c;
+}
+
+/* Placeholder for chat history - a scrollable area */
+#chat-history {
+    margin-top: 1.5rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    list-style-type: none;
+    color: #dbdee1;
+}
+
+/* User profile placeholder */
+#user-profile {
+    border-top: 1px solid #4e4f52;
+    padding-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 500;
+    color: #dbdee1;
+}
+#user-profile .avatar {
+    width: 32px;
+    height: 32px;
+    background-color: #5865f2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* The main chat area - takes up the remaining space */
+#main-chat-area {
+    flex-grow: 1;
+    background-color: #2b2d31;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The chatbot component itself */
+#chatbot {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: #2b2d31;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* The chat input area wrapper */
+#chat-input-area {
+    padding: 1rem 1.5rem;
+    background-color: #2b2d31;
+}
+
+/* The input wrapper */
+#input-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #383a40;
     border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    border: 1px solid #4e4f52;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
 }
 
-/* Hide Gradio branding footer */
-footer {
-    display: none !important;
+/* The textbox inside the input wrapper */
+#user-input {
+    flex-grow: 1;
+    border: none;
+    background: transparent;
+    color: #dbdee1;
+    padding: 0.5rem;
+    font-size: 1rem;
+    resize: none;
+    outline: none;
 }
 
-/* --- App Header --- */
-#chatbot-header {
-    padding: 16px 24px !important;
-    text-align: center !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    background: #f9fafb !important;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
-}
-#chatbot-header .prose {
-    font-size: 24px !important;
-    font-weight: 600 !important;
-    color: #111827 !important;
-    margin: 0 !important;
-}
-
-/* --- Chat Area --- */
-#chatbot-container {
-    flex: 1 !important;
-    padding: 0 !important;
-    overflow: hidden !important; /* Hide overflow to let chatbot handle scroll */
-}
-.gradio-chat {
-    height: calc(100vh - 180px) !important; /* Adjust height based on header/footer */
-    border: none !important;
-    background: transparent !important;
-    padding: 24px !important;
-}
-
-/* --- Message Bubbles --- */
-.gradio-chat .message-bubble {
-    margin: 12px 0 !important;
-    padding: 12px 18px !important;
-    border-radius: 18px !important;
-    max-width: 75% !important;
-    font-size: 15px !important;
-    line-height: 1.5 !important;
-    word-wrap: break-word !important;
-    animation: slideIn 0.3s ease-out;
-}
-
-/* User messages - blue, right aligned */
-.gradio-chat .message-bubble.user {
-    background: #2563eb !important;
-    color: #ffffff !important;
-    margin-left: auto !important;
-    border-bottom-right-radius: 4px !important;
-}
-
-/* Bot messages - gray, left aligned */
-.gradio-chat .message-bubble.bot {
-    background: #f1f3f4 !important;
-    color: #374151 !important;
-    margin-right: auto !important;
-    border-bottom-left-radius: 4px !important;
-    border: 1px solid #e5e7eb !important;
-}
-
-/* --- Input Section --- */
-#input-container {
-    padding: 16px 24px 24px 24px !important;
-    background: #ffffff !important;
-    border-top: 1px solid #e5e7eb !important;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
-}
-#input-container .form {
-    display: flex !important;
-    gap: 8px !important;
-    align-items: center !important;
-}
-
-/* Text input */
-#msg-textbox textarea {
-    padding: 12px 16px !important;
-    border: 1px solid #d1d5db !important;
-    border-radius: 24px !important;
-    font-size: 15px !important;
-    background: #ffffff !important;
-    outline: none !important;
-    resize: none !important;
-    transition: border-color 0.2s ease !important;
-    box-shadow: none !important;
-}
-#msg-textbox textarea:focus {
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
-}
-#msg-textbox textarea::placeholder {
-    color: #9ca3af !important;
-}
-
-/* Send button */
+/* The send button */
 #send-button {
-    min-width: 44px !important;
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 50% !important;
-    background: #2563eb !important;
-    border: none !important;
-    color: #ffffff !important;
-    font-size: 20px !important;
-    transition: background-color 0.2s ease !important;
-}
-#send-button:hover {
-    background: #1d4ed8 !important;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
 }
 
-/* --- Animation --- */
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+#send-button svg {
+    width: 20px;
+    height: 20px;
+    fill: #b5bac1;
+    transition: fill 0.2s;
+}
+
+#send-button:hover svg {
+    fill: #dbdee1;
+}
+
+/* Customize chat bubble styles */
+/* Gradio's chat component adds specific classes for user and bot messages. */
+/* You might need to inspect the final HTML to get the exact class names. */
+/* For example, for user messages, it might be something like .user-message */
+/* and for bot messages, .bot-message. Let's use the default ones. */
+
+/* User message bubble */
+.user-message {
+    background-color: #383a40 !important;
+    color: #dbdee1 !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+}
+
+/* Bot message bubble */
+.bot-message {
+    background-color: #1e1f22 !important;
+    color: #dbdee1 !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
 }
 """
 
-# Create clean, working interface
-with gr.Blocks(css=css, title="💬 Aesthetic AI Chatbot") as demo:
-    # We use elem_id for more specific CSS targeting
-    with gr.Column():
-        with gr.Row(elem_id="chatbot-header"):
-            gr.Markdown("# 💬 Aesthetic AI Chatbot")
-            
-        with gr.Column(elem_id="chatbot-container"):
-            chatbot = gr.Chatbot(
-                elem_id="chatbot",
-                elem_classes=["gradio-chat"], # Use Gradio's class for chatbot specifics
-                show_label=False,
-                container=False,
-                bubble_full_width=False
-            )
-            
-        with gr.Row(elem_id="input-container"):
-            msg = gr.Textbox(
-                elem_id="msg-textbox",
-                placeholder="Message Aesthetic AI...",
-                show_label=False,
-                container=False,
-                lines=1,
-                max_lines=4,
-                scale=10 # Give more space to the textbox
-            )
-            send = gr.Button(
-                "↑", 
-                elem_id="send-button",
-                scale=1 # Give less space to the button
-            )
+def generate_response(message, history):
+    """
+    Function to call the OpenRouter API with the user's message.
+    """
+    if not OPENROUTER_API_KEY:
+        return "Error: OPENROUTER_API_KEY not set. Please set this environment variable."
+        
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-    # Connect events
-    msg.submit(chatbot_response, [msg, chatbot], [chatbot, msg])
-    send.click(chatbot_response, [msg, chatbot], [chatbot, msg])
+    # Format the messages for the API call. History is a list of tuples.
+    messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
+    for user_msg, bot_msg in history:
+        messages.append({"role": "user", "content": user_msg})
+        messages.append({"role": "assistant", "content": bot_msg})
+    
+    messages.append({"role": "user", "content": message})
 
-if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        show_api=False,
-        show_error=True
-    )
+    data = {
+        "model": "openai/gpt-3.5-turbo", # Specify the model here
+        "messages": messages,
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status() # Raise an exception for bad status codes
+        
+        result = response.json()
+        bot_reply = result['choices'][0]['message']['content']
+        
+        return bot_reply
+
+    except requests.exceptions.RequestException as e:
+        return f"An error occurred: {e}"
+
+# Build the Gradio interface
+with gr.Blocks(css=custom_css, theme=gr.themes.Monochrome()) as demo:
+    with gr.Row():
+        with gr.Column(elem_id="sidebar", scale=1):
+            gr.HTML(value="<div id='new-chat-button'>+ New Chat</div>", elem_id="new-chat-button")
+            gr.HTML(value="<div id='chat-history'><h3>Recent</h3><ul><li>Data Structures</li></ul></div>", elem_id="chat-history")
+            gr.HTML(value="<div id='user-profile'><div class='avatar'>U</div><span>Username</span></div>", elem_id="user-profile")
+
+        with gr.Column(elem_id="main-chat-area", scale=4):
+            gr.Markdown("# How can I help you today?")
+            gr.Chatbot(elem_id="chatbot")
+            
+            with gr.Column(elem_id="chat-input-area"):
+                with gr.Row(elem_id="input-wrapper"):
+                    msg = gr.Textbox(
+                        label="Message the bot...",
+                        elem_id="user-input",
+                        lines=1,
+                        scale=9
+                    )
+                    send_button = gr.Button(
+                        value="Send",
+                        elem_id="send-button",
+                        variant="primary",
+                        scale=1
+                    )
+    
+    # Define the chat flow
+    def respond(message, chat_history):
+        bot_message = generate_response(message, chat_history)
+        chat_history.append((message, bot_message))
+        return "", chat_history
+
+    msg.submit(respond, [msg, gr.State([])], [msg, gr.Chatbot(elem_id="chatbot")])
+    send_button.click(respond, [msg, gr.State([])], [msg, gr.Chatbot(elem_id="chatbot")])
+
+# Launch the app
+demo.launch(share=True)
