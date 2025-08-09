@@ -659,10 +659,7 @@ def create_gradio_interface():
             chat_with_assistant,
             examples=examples,
             title="",
-            description="💬 Start chatting! I can help with healthcare billing codes, general questions, and adapt to your emotional tone.",
-            retry_btn="↻ Retry",
-            undo_btn="↺ Undo",
-            clear_btn="🗑️ Clear"
+            description="💬 Start chatting! I can help with healthcare billing codes, general questions, and adapt to your emotional tone."
         )
         
         # Additional Tools Section
@@ -674,7 +671,7 @@ def create_gradio_interface():
                     placeholder="e.g., A0429, 99213, DRG470...",
                     lines=1
                 )
-                lookup_btn = gr.Button("🔍 Look up Code", elem_classes=["custom-button"])
+                lookup_btn = gr.Button("🔍 Look Up Code", elem_classes=["custom-button"])
                 code_output = gr.Textbox(
                     label="Code Information",
                     placeholder="Code details will appear here...",
@@ -768,7 +765,6 @@ def create_gradio_interface():
         )
     
     return demo
-
 # ============= Launch Application =============
 
 # Create and configure the interface
