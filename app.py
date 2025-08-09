@@ -6,77 +6,36 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "gpt-3.5-turbo"
 
+if not OPENROUTER_API_KEY:
+    raise ValueError("OPENROUTER_API_KEY environment variable not set. Please set it before running.")
+
 headers = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "Content-Type": "application/json"
 }
 
 def query_openrouter(messages):
-    payload = {"model": MODEL, "messages": messages}
+    payload = {
+        "model": MODEL,
+        "messages": messages
+    }
     response = requests.post(OPENROUTER_URL, json=payload, headers=headers)
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
-
-CUSTOM_CSS = """
-.user-msg {
-    background-color: #DCF8C6;
-    color: #000;
-    padding: 8px 12px;
-    border-radius: 15px 15px 0 15px;
-    max-width: 70%;
-    margin-left: auto;
-    margin-bottom: 5px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-.bot-msg {
-    background-color: #F1F0F0;
-    color: #333;
-    padding: 8px 12px;
-    border-radius: 15px 15px 15px 0;
-    max-width: 70%;
-    margin-right: auto;
-    margin-bottom: 5px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-@media (max-width: 600px) {
-  .user-msg, .bot-msg {
-    max-width: 90% !important;
-    font-size: 14px !important;
-    padding: 10px !important;
-  }
-}
-body {
-    background-color: #f9f9f9;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-"""
-
-def format_user_message(msg):
-    return f'<div class="user-msg">{msg}</div>'
-
-def format_bot_message(msg):
-    return f'<div class="bot-msg">{msg}</div>'
-
-def strip_html(html_str):
-    import re
-    clean = re.compile('<.*?>')
-    return re.sub(clean, '', html_str)
+    if response.status_code != 200:
+        raise Exception(f"OpenRouter API error {response.status_code}: {response.text}")
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
 
 def chatbot(user_message, history):
     if history is None:
         history = []
-
-    history.append({"role": "user", "content": format_user_message(user_message)})
-    api_messages = [{"role": m["role"], "content": strip_html(m["content"])} for m in history]
-
-    bot_reply = query_openrouter(api_messages)
-    history.append({"role": "assistant", "content": format_bot_message(bot_reply)})
-
+    history.append({"role": "user", "content": user_message})
+    bot_reply = query_openrouter(history)
+    history.append({"role": "assistant", "content": bot_reply})
     chat_pairs = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
     return chat_pairs, history
 
-with gr.Blocks(css=CUSTOM_CSS) as demo:
-    gr.Markdown("<h2 style='text-align:center;'>OpenRouter GPT-3.5 Chatbot</h2>")
+with gr.Blocks() as demo:
+    gr.Markdown("# Chatbot powered by OpenRouter GPT-3.5 Turbo")
     chatbot_ui = gr.Chatbot()
     user_input = gr.Textbox(placeholder="Type your message here...", show_label=False)
     state = gr.State([])
