@@ -1,334 +1,229 @@
 import streamlit as st
-import requests
 import os
-import json
-import time
+from openai import OpenAI
+from streamlit.runtime.scriptrunner import add_script_run_ctx
 
-# Page configuration - MUST be first Streamlit command
+# ==============================================================================
+# 1. Page Configuration and Custom CSS
+# ==============================================================================
+# This section configures the page and injects custom CSS to style the app
+# to look like the ChatGPT interface from your provided image.
+# We're using Streamlit's wide layout and a custom title.
+
 st.set_page_config(
-    page_title="AI Assistant 2025",
-    page_icon="🤖",
+    page_title="Streamlit Chat",
     layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'Get Help': 'https://huggingface.co/spaces',
-        'Report a bug': "https://huggingface.co/spaces",
-        'About': "AI Assistant 2025 - Built with Streamlit 1.48.0"
-    }
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS matching the clean gradient design
-st.markdown("""
+# Custom CSS to match the ChatGPT aesthetic.
+# We're styling the main content, the sidebar, chat messages, and the input box.
+custom_css = """
 <style>
-    /* Import clean font */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Global styling - Clean gradient background */
+    /* General body and background */
+    body {
+        background: linear-gradient(to right, #f7f7f7, #ffffff);
+    }
     .stApp {
-        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        min-height: 100vh;
+        background-color: transparent;
     }
-    
-    /* Main container */
     .main .block-container {
-        padding-top: 3rem;
+        max-width: 650px;
+        padding-top: 2rem;
         padding-bottom: 2rem;
-        max-width: 800px;
-        margin: 0 auto;
     }
-    
-    /* Title styling - Clean and centered */
-    .main-header {
-        text-align: center;
-        color: #2c3e50;
-        font-weight: 500;
-        font-size: 2.5rem;
-        margin-bottom: 3rem;
-        letter-spacing: -0.02em;
+
+    /* Main chat area styling */
+    .st-emotion-cache-18451p8 { /* This class targets the main content block */
+        background-color: transparent;
+        padding: 0 1rem;
     }
-    
-    /* Chat messages */
-    .stChatMessage {
-        border-radius: 20px !important;
-        margin-bottom: 1rem;
-        border: none;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+
+    /* Sidebar styling */
+    .st-emotion-cache-12fmj92 {
+        background-color: #202123;
+        color: #f7f7f7;
     }
-    
-    /* User messages - Clean white */
-    .stChatMessage[data-testid*="user"] {
-        background: white !important;
-        margin-left: 20% !important;
+    .st-emotion-cache-12fmj92 a {
+        color: #f7f7f7;
     }
-    
-    .stChatMessage[data-testid*="user"] .stMarkdown {
-        color: #2c3e50 !important;
+    .st-emotion-cache-12fmj92 .stButton button {
+        background-color: transparent;
+        border: 1px solid #d9d9e3;
+        color: #f7f7f7;
     }
-    
-    /* Assistant messages - Soft white with subtle shadow */
-    .stChatMessage[data-testid*="assistant"] {
-        background: rgba(255, 255, 255, 0.9) !important;
-        margin-right: 20% !important;
+    .st-emotion-cache-12fmj92 .stButton button:hover {
+        background-color: rgba(255, 255, 255, 0.1);
     }
-    
-    /* Chat input styling - Rounded and clean */
-    .stChatInputContainer > div {
-        background: white !important;
-        border-radius: 25px !important;
-        border: 1px solid rgba(0,0,0,0.1) !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
-        max-width: 600px !important;
-        margin: 0 auto !important;
-    }
-    
-    .stChatInputContainer textarea {
-        border: none !important;
-        background: transparent !important;
-        font-family: 'Inter', sans-serif !important;
-        color: #2c3e50 !important;
-    }
-    
-    .stChatInputContainer textarea::placeholder {
-        color: #95a5a6 !important;
-    }
-    
-    /* Sidebar - Clean and minimal */
-    .css-1d391kg {
-        background: rgba(255,255,255,0.3) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-    }
-    
-    /* Buttons - Soft and clean */
-    .stButton > button {
-        background: white !important;
-        color: #2c3e50 !important;
-        border: 1px solid rgba(0,0,0,0.1) !important;
-        border-radius: 15px !important;
-        padding: 0.5rem 1.5rem !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
-    }
-    
-    .stButton > button:hover {
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
-        transform: translateY(-1px) !important;
-    }
-    
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    
-    /* Success/Error messages - Clean styling */
-    .stSuccess {
-        background: rgba(46, 204, 113, 0.1) !important;
-        border: 1px solid rgba(46, 204, 113, 0.2) !important;
-        border-radius: 10px !important;
-        color: #27ae60 !important;
-    }
-    
-    .stError {
-        background: rgba(231, 76, 60, 0.1) !important;
-        border: 1px solid rgba(231, 76, 60, 0.2) !important;
-        border-radius: 10px !important;
-        color: #e74c3c !important;
-    }
-    
-    .stInfo {
-        background: rgba(52, 152, 219, 0.1) !important;
-        border: 1px solid rgba(52, 152, 219, 0.2) !important;
-        border-radius: 10px !important;
-        color: #3498db !important;
-    }
-    
-    /* Metric containers */
-    .metric-container {
-        background: rgba(255,255,255,0.6);
+
+    /* Chat message styling to mimic ChatGPT */
+    .st-emotion-cache-gftf1k {
+        background-color: #f7f7f7;
         border-radius: 10px;
-        padding: 1rem;
-        backdrop-filter: blur(5px);
-        border: 1px solid rgba(255,255,255,0.3);
-        margin-bottom: 0.5rem;
-        color: #2c3e50;
+        padding: 10px;
     }
-    
-    /* Avatar styling */
-    .stChatMessage img {
-        border-radius: 50% !important;
+    .st-emotion-cache-199v41 {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    /* Header for the chat page */
+    .st-emotion-cache-1629p8f h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .st-emotion-cache-1629p8f p {
+        text-align: center;
+        color: #666;
+        font-size: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    /* Chat input box styling to match the image */
+    .st-emotion-cache-10qg19x {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        max-width: 650px;
+        padding: 1rem;
+        background: linear-gradient(to right, #f7f7f7, #ffffff);
+        z-index: 100;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .st-emotion-cache-10qg19x .st-emotion-cache-1n1p154 {
+        border-radius: 20px;
+        border: 1px solid #d9d9e3;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        padding: 10px;
+    }
+    .st-emotion-cache-10qg19x input {
+        border: none;
+        outline: none;
+    }
+    .st-emotion-cache-10qg19x label {
+        display: none;
+    }
+    .st-emotion-cache-10qg19x .st-emotion-cache-1e5x6cs {
+        background-color: transparent;
+        border-radius: 20px;
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
 
-# Initialize session state
+
+# ==============================================================================
+# 2. OpenRouter API Configuration and Client
+# ==============================================================================
+# This section sets up the connection to the OpenRouter API.
+# It's important to use st.secrets for secure credential management.
+# The user will need to add their API key to a secrets.toml file.
+# The client is configured to use OpenRouter's specific base URL.
+
+try:
+    api_key = st.secrets["OPENROUTER_API_KEY"]
+except KeyError:
+    st.error("OpenRouter API key not found. Please set it in your secrets.toml file.")
+    st.stop()
+
+# Initialize the OpenAI client with the OpenRouter API base URL.
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key,
+)
+
+
+# ==============================================================================
+# 3. Sidebar Navigation
+# ==============================================================================
+# Recreating the sidebar from the ChatGPT UI with placeholders.
+# This section shows how you can structure a multi-page app or navigation.
+
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/1200px-ChatGPT_logo.svg.png", width=30)
+    st.title("ChatGPT")
+    st.button("New Chat", key="new_chat_button")
+    st.divider()
+
+    st.subheader("Your chats")
+    st.markdown("- Chat about Streamlit")
+    st.markdown("- Brainstorming ideas")
+
+    st.divider()
+    st.markdown("💬 **Saved memory full**")
+    st.markdown("[✨ Get Plus](https://chat.openai.com/gpts)")
+
+
+# ==============================================================================
+# 4. Main Chat Interface
+# ==============================================================================
+# This is the core of the application where the chat history is managed and
+# displayed, and where the user can interact with the chatbot.
+
+st.title("Introducing GPT-5")
+st.caption("ChatGPT now has our smartest, fastest, most useful model yet, with thinking built in—so you get the best answer, every time.")
+
+
+# Initialize chat history in session state if it doesn't exist.
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "message_count" not in st.session_state:
-    st.session_state.message_count = 0
 
-# Check for API key
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-@st.cache_data(ttl=3600)
-def check_api_connection():
-    """Check if API is working"""
-    if not OPENROUTER_API_KEY:
-        return False
-    try:
-        url = "https://openrouter.ai/api/v1/models"
-        headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
-        response = requests.get(url, headers=headers, timeout=5)
-        return response.status_code == 200
-    except:
-        return False
-
-def stream_ai_response(messages):
-    """Stream response from OpenRouter API with better error handling"""
-    if not OPENROUTER_API_KEY:
-        yield "❌ **Error:** OPENROUTER_API_KEY not set in environment variables."
-        return
-    
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://huggingface.co/spaces",
-        "X-Title": "AI Assistant 2025"
-    }
-    
-    # Prepare messages for API
-    api_messages = [{"role": "system", "content": "You are a helpful, friendly, and knowledgeable AI assistant. Provide clear, accurate, and engaging responses."}]
-    for msg in messages:
-        api_messages.append({
-            "role": msg["role"],
-            "content": msg["content"]
-        })
-    
-    data = {
-        "model": "openai/gpt-3.5-turbo",
-        "messages": api_messages,
-        "stream": True,
-        "temperature": 0.7,
-        "max_tokens": 1000,
-    }
-    
-    try:
-        with requests.post(url, headers=headers, json=data, stream=True, timeout=30) as response:
-            response.raise_for_status()
-            
-            full_response = ""
-            for line in response.iter_lines():
-                if line:
-                    line = line.decode('utf-8')
-                    if line.startswith('data: '):
-                        line = line[6:]
-                        if line.strip() == '[DONE]':
-                            break
-                        try:
-                            data = json.loads(line)
-                            if 'choices' in data and len(data['choices']) > 0:
-                                delta = data['choices'][0].get('delta', {})
-                                if 'content' in delta:
-                                    full_response += delta['content']
-                                    yield full_response
-                        except json.JSONDecodeError:
-                            continue
-                            
-    except requests.exceptions.Timeout:
-        yield "⏰ **Request timed out.** Please try again."
-    except requests.exceptions.RequestException as e:
-        yield f"❌ **Connection error:** {str(e)[:100]}..."
-    except Exception as e:
-        yield f"❌ **Unexpected error:** {str(e)[:100]}..."
-
-# Header with animation
-st.markdown('<h1 class="main-header">🤖 AI Assistant 2025</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">✨ Powered by Advanced AI • Modern Streamlit Interface ✨</p>', unsafe_allow_html=True)
-
-# Display chat messages
+# Display chat messages from history on app rerun.
+# We iterate through the messages stored in st.session_state.
 for message in st.session_state.messages:
-    with st.chat_message(message["role"], avatar="🤖" if message["role"] == "assistant" else "👨‍💻"):
+    with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input - MUST be at root level, not inside columns
-if prompt := st.chat_input("💭 Type your message here... ✨"):
-    # Add user message
+
+# Accept user input.
+# The prompt is handled by st.chat_input, which is located at the bottom of the page.
+if prompt := st.chat_input("Ask anything"):
+    # Add user message to chat history.
     st.session_state.messages.append({"role": "user", "content": prompt})
-    st.session_state.message_count += 1
-    
-    with st.chat_message("user", avatar="👨‍💻"):
+
+    # Display user message in chat message container.
+    with st.chat_message("user"):
         st.markdown(prompt)
-    
-    # Generate AI response
-    with st.chat_message("assistant", avatar="🤖"):
-        message_placeholder = st.empty()
-        
-        # Stream the response
+
+    # Generate and display assistant response.
+    # The response is streamed from the API to provide a dynamic user experience.
+    with st.chat_message("assistant"):
+        # Create a placeholder to display the streamed response.
+        response_placeholder = st.empty()
         full_response = ""
-        for response_chunk in stream_ai_response(st.session_state.messages):
-            full_response = response_chunk
-            message_placeholder.markdown(full_response + "▌")
         
-        message_placeholder.markdown(full_response)
+        # Use a try-except block to handle potential API errors gracefully.
+        try:
+            # Make the API call to OpenRouter.
+            # We are using the 'gpt-3.5-turbo' model as requested.
+            stream = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
+                ],
+                stream=True,
+            )
+
+            # Iterate through the streamed response and append chunks.
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    response_placeholder.markdown(full_response)
         
-    # Add assistant response to session state
+        except Exception as e:
+            # Display a user-friendly error message if the API call fails.
+            error_message = f"An error occurred: {e}"
+            response_placeholder.error(error_message)
+            full_response = error_message
+            st.stop()
+
+    # Add assistant response to chat history.
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-# Enhanced sidebar
-with st.sidebar:
-    st.markdown("### 🛠️ **Chat Controls**")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🗑️ Clear", use_container_width=True):
-            st.session_state.messages = []
-            st.session_state.message_count = 0
-            st.rerun()
-    
-    with col2:
-        if st.button("🔄 Refresh", use_container_width=True):
-            st.rerun()
-    
-    st.markdown("### 📊 **Statistics**")
-    st.markdown(f'<div class="metric-container"><strong>Messages:</strong> {st.session_state.message_count}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="metric-container"><strong>Conversations:</strong> {len(st.session_state.messages)}</div>', unsafe_allow_html=True)
-    
-    st.markdown("### 🔐 **API Status**")
-    if OPENROUTER_API_KEY:
-        if check_api_connection():
-            st.success("✅ **Connected & Ready**")
-        else:
-            st.warning("⚠️ **API Key Set** (Connection not verified)")
-    else:
-        st.error("❌ **API Key Missing**")
-        st.info("💡 Add OPENROUTER_API_KEY in Space secrets")
-    
-    st.markdown("### ℹ️ **About**")
-    st.info("""
-    **AI Assistant 2025**
-    
-    🚀 **Features:**
-    - Real-time streaming responses
-    - Modern gradient UI design  
-    - Optimized for latest Streamlit
-    - Smart conversation handling
-    
-    Built with ❤️ using Streamlit 1.48.0
-    """)
-    
-    # Add some fun stats
-    if st.session_state.messages:
-        total_chars = sum(len(msg["content"]) for msg in st.session_state.messages)
-        st.markdown(f'<div class="metric-container"><strong>Total Characters:</strong> {total_chars:,}</div>', unsafe_allow_html=True)
-
-# Footer
-st.markdown("---")
-st.markdown(
-    "<div style='text-align: center; color: rgba(255,255,255,0.7); padding: 1rem;'>"
-    "🤖 <strong>AI Assistant 2025</strong> • Built with Streamlit • Powered by OpenRouter"
-    "</div>", 
-    unsafe_allow_html=True
-)
