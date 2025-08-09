@@ -1,116 +1,88 @@
 #!/usr/bin/env python3
 """
-Fully Functional AI Assistant with Reliable API Integration
+Final Fixed AI Assistant - No Warnings, Clear Responses
 """
 
 import gradio as gr
 import requests
 import os
 import random
-from typing import Optional
+from datetime import datetime
 
-# Configuration - SET YOUR API KEY IN HUGGINGFACE SPACES SECRETS
+# Configuration
 API_KEY = os.getenv('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')
-API_ENABLED = bool(API_KEY)  # Auto-disable if no API key
+MODEL = "openai/gpt-3.5-turbo"  # Change to any OpenRouter model
 
-# Model Configuration
-MODEL = "openai/gpt-3.5-turbo"  # Change to any OpenRouter supported model
+# System message for API calls
+SYSTEM_PROMPT = """You are a helpful AI assistant specializing in medical billing codes and general knowledge.
+Respond concisely and clearly. For medical codes, provide:
+1. Code type (CPT/HCPCS/ICD/DRG)
+2. Official description
+3. Common use cases
+4. Any important notes"""
 
-# Fallback responses
-FALLBACK_RESPONSES = [
-    "I'd be happy to help with that!",
-    "Interesting question! Here's what I know...",
-    "Let me share some information about that...",
-    "I can help with that. What specifically would you like to know?",
-]
-
-def get_api_response(message: str) -> Optional[str]:
-    """Get response from OpenRouter API with proper error handling"""
-    if not API_ENABLED:
-        return None
-        
+def get_api_response(message: str) -> str:
+    """Get response from OpenRouter API"""
+    if not API_KEY:
+        raise ValueError("API key not configured")
+    
     try:
         response = requests.post(
             'https://openrouter.ai/api/v1/chat/completions',
             headers={
                 'Authorization': f'Bearer {API_KEY}',
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://huggingface.co',
+                'Content-Type': 'application/json'
             },
             json={
                 'model': MODEL,
-                'messages': [{'role': 'user', 'content': message}],
-                'temperature': 0.7,
-                'max_tokens': 500,
+                'messages': [
+                    {'role': 'system', 'content': SYSTEM_PROMPT},
+                    {'role': 'user', 'content': message}
+                ],
+                'temperature': 0.7
             },
             timeout=15
         )
-        
-        if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
-        else:
-            print(f"API Error: Status {response.status_code}")
-            return None
-            
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        print(f"API Exception: {str(e)}")
-        return None
+        print(f"API Error: {str(e)}")
+        return "I'm having trouble connecting to my knowledge base. Please try again later."
 
-def get_local_response(message: str) -> str:
-    """Local knowledge base for when API fails"""
-    lower_msg = message.lower()
-    
-    # Medical Billing Knowledge
-    if any(word in lower_msg for word in ['cpt', 'hcpcs', 'icd', 'drg', 'medical code', 'billing']):
-        return ("I can help with medical billing codes! Here are examples:\n\n"
-                "• CPT 99213: Office visit (established patient)\n"
-                "• HCPCS A0429: Emergency ambulance transport\n"
-                "• ICD-10 Z23: Encounter for immunization\n\n"
-                "Ask about a specific code for details!")
-    
-    # General Knowledge
-    knowledge = {
-        'elon musk': "Elon Musk is CEO of SpaceX/Tesla. Known for EVs and space tech.",
-        'apple nutrition': "Medium apple (182g):\n- Calories: 95\n- Fiber: 4g\n- Vitamin C: 14% DV",
-        'hello': random.choice(["Hello! How can I help?", "Hi there!", "Hey! Ask me anything."]),
-        'thank you': "You're welcome!",
-    }
-    
-    for keyword, response in knowledge.items():
-        if keyword in lower_msg:
-            return response
-    
-    return random.choice(FALLBACK_RESPONSES)
-
-def chat_with_assistant(message: str, history: list) -> str:
-    """Main chat function with API and local fallback"""
+def respond(message: str, history: list) -> str:
+    """Main response function with clear output"""
     if not message.strip():
-        return "Please type your message. I can discuss medical billing or general topics!"
+        return "Please type your question about medical billing or any other topic."
     
-    # Try API first if enabled
-    if API_ENABLED:
-        api_response = get_api_response(message)
-        if api_response:
-            return api_response
+    # Medical billing keywords
+    billing_keywords = ['cpt', 'hcpcs', 'icd', 'drg', 'medical code', 'billing']
     
-    # Fallback to local knowledge
-    return get_local_response(message)
+    if any(kw in message.lower() for kw in billing_keywords):
+        try:
+            return get_api_response(message)
+        except:
+            return ("I can explain medical billing codes like:\n\n"
+                   "• CPT 99213: Office visit\n"
+                   "• HCPCS A0429: Ambulance\n"
+                   "• ICD-10 Z23: Immunization\n\n"
+                   "Ask about a specific code for details.")
+    
+    # General questions
+    return get_api_response(message)
 
-# Create the interface
-demo = gr.ChatInterface(
-    fn=chat_with_assistant,
-    title="🏥 AI Medical Billing Assistant",
-    description=f"Using {MODEL} | Ask about healthcare codes or general topics",
-    examples=[
-        ["What is CPT 99213?"],
-        ["Explain HCPCS A0429"],
-        ["Tell me about Elon Musk"],
-        ["Apple nutrition facts"],
-    ],
-)
+# Create modern chat interface
+with gr.Blocks(title="Medical Coding Assistant") as demo:
+    gr.Markdown("# 🏥 AI Medical Billing Assistant")
+    gr.Markdown("Ask about healthcare codes or general topics")
+    
+    chatbot = gr.Chatbot(height=500)
+    msg = gr.Textbox(label="Your Question")
+    clear = gr.ClearButton([msg, chatbot])
+    
+    msg.submit(respond, [msg, chatbot], [msg, chatbot])
 
-# Launch with reliability
+# Launch properly
 if __name__ == "__main__":
-    demo.launch(debug=True)
+    demo.launch(server_name="0.0.0.0", server_port=7860)
 else:
     demo.launch()
