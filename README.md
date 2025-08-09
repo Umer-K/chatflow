@@ -6,9 +6,11 @@ colorTo: pink
 sdk: streamlit
 sdk_version: 1.28.1
 app_file: app.py
-pinned: false
+pinned: true
 license: mit
 short_description: One interface, 15+ AI models, persistent chat.
+thumbnail: >-
+  https://cdn-uploads.huggingface.co/production/uploads/688dfa71393005de0077ca78/CjkodJCkxhiwNqjsY2AOv.jpeg
 ---
 
 # AI Assistant 2025 🤖
