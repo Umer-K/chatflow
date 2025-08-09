@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Hybrid AI Assistant - General Purpose + Healthcare Billing Expert
-A ChatGPT-style assistant that can handle any conversation while specializing in healthcare billing codes
+A ChatGPT-style assistant using Gradio ChatInterface for simplicity
 """
 
 import os
@@ -9,13 +9,14 @@ import sys
 import json
 import logging
 import re
-from typing import Dict, Optional, Tuple, List, Any
+from typing import Dict, Optional, Tuple, List, Any, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 import requests
 import gradio as gr
 from datetime import datetime
 import random
+import time
 
 # Set up environment
 os.environ['OPENROUTER_API_KEY'] = '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'
@@ -269,7 +270,8 @@ class HybridAIAssistant:
                     'model': 'openai/gpt-3.5-turbo',
                     'messages': messages,
                     'temperature': 0.7,
-                    'max_tokens': 500
+                    'max_tokens': 500,
+                    'stream': False
                 },
                 timeout=30
             )
@@ -295,6 +297,81 @@ class HybridAIAssistant:
             logger.error(f"Request failed: {e}")
             return self.get_fallback_response(message)
     
+    def get_streaming_response(self, message: str, billing_context: bool = False) -> Iterator[str]:
+        """Get streaming response from OpenRouter API"""
+        
+        # Prepare system prompt
+        system_prompt = """You are a helpful, friendly AI assistant with expertise in healthcare billing codes. 
+        You can assist with any topic - from casual conversation to complex questions. 
+        When discussing medical billing codes, you provide accurate, detailed information.
+        Be conversational, helpful, and engaging. Use emojis occasionally to be friendly.
+        Keep responses concise but informative."""
+        
+        if billing_context:
+            system_prompt += "\nThe user is asking about medical billing. Provide helpful information even if you don't have specific code details."
+        
+        # Build conversation history for context
+        messages = [{'role': 'system', 'content': system_prompt}]
+        
+        # Add recent conversation history
+        for msg in self.context.messages[-10:]:
+            messages.append(msg)
+        
+        # Add current message
+        messages.append({'role': 'user', 'content': message})
+        
+        try:
+            response = requests.post(
+                'https://openrouter.ai/api/v1/chat/completions',
+                headers=self.headers,
+                json={
+                    'model': 'openai/gpt-3.5-turbo',
+                    'messages': messages,
+                    'temperature': 0.7,
+                    'max_tokens': 500,
+                    'stream': True
+                },
+                timeout=30,
+                stream=True
+            )
+            
+            if response.status_code == 200:
+                full_response = ""
+                for line in response.iter_lines():
+                    if line:
+                        line = line.decode('utf-8')
+                        if line.startswith('data: '):
+                            line = line[6:]
+                            if line.strip() == '[DONE]':
+                                break
+                            try:
+                                chunk = json.loads(line)
+                                if 'choices' in chunk and len(chunk['choices']) > 0:
+                                    delta = chunk['choices'][0].get('delta', {})
+                                    if 'content' in delta:
+                                        content = delta['content']
+                                        full_response += content
+                                        yield full_response
+                            except json.JSONDecodeError:
+                                continue
+                
+                # Update context with full response
+                self.context.messages.append({'role': 'user', 'content': message})
+                self.context.messages.append({'role': 'assistant', 'content': full_response})
+                
+                # Keep only last 20 messages in context
+                if len(self.context.messages) > 20:
+                    self.context.messages = self.context.messages[-20:]
+                
+            else:
+                fallback = self.get_fallback_response(message)
+                yield fallback
+                
+        except Exception as e:
+            logger.error(f"Streaming request failed: {e}")
+            fallback = self.get_fallback_response(message)
+            yield fallback
+    
     def get_fallback_response(self, message: str) -> str:
         """Fallback responses when API fails"""
         fallbacks = [
@@ -305,337 +382,213 @@ class HybridAIAssistant:
         ]
         return random.choice(fallbacks)
     
-    def process_message(self, message: str) -> str:
-        """Main method to process any message"""
+    def process_message_streaming(self, message: str) -> Iterator[str]:
+        """Main method to process any message with streaming"""
         if not message.strip():
-            return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
+            yield "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
+            return
         
         # Detect intent
         intent = self.detect_intent(message)
         
         # Route to appropriate handler
         if intent['is_billing'] and intent['codes_found']:
-            return self.handle_billing_query(message, intent['codes_found'])
+            yield self.handle_billing_query(message, intent['codes_found'])
         else:
-            return self.get_general_response(message, billing_context=intent['is_billing'])
+            yield from self.get_streaming_response(message, billing_context=intent['is_billing'])
     
     def reset_context(self):
         """Reset conversation context"""
         self.context = ConversationContext()
 
-# ============= Gradio Interface =============
+# ============= Global Assistant Instance =============
+assistant = HybridAIAssistant()
+
+# ============= Chat Functions =============
+
+def respond_stream(message, history):
+    """Streaming response function for ChatInterface"""
+    if not message.strip():
+        yield "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
+        return
+    
+    # Process message with streaming
+    for partial_response in assistant.process_message_streaming(message):
+        yield partial_response
+
+def reset_chat():
+    """Reset the conversation context"""
+    assistant.reset_context()
+    return None
+
+# ============= Examples and Additional Buttons =============
+
+examples = [
+    "What is healthcare billing code A0429?",
+    "Can you explain CPT code 99213 in detail?",
+    "Tell me about DRG 470",
+    "How does artificial intelligence work?",
+    "Give me a simple pasta recipe",
+    "Teach me Python basics",
+    "Write a short poem about nature",
+    "Help me write a professional email template",
+    "Give me creative story ideas"
+]
+
+# ============= Create Interface =============
 
 def create_interface():
-    assistant = HybridAIAssistant()
+    """Create the Gradio ChatInterface"""
     
-    # ChatGPT-style CSS
+    # Custom CSS for better styling
     custom_css = """
-    /* Main container */
     .gradio-container {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
-        max-width: 900px !important;
+        max-width: 1000px !important;
         margin: auto !important;
-        background: #ffffff !important;
     }
     
-    /* Header styling */
-    .header-container {
+    .header-text {
+        text-align: center;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
         padding: 2rem;
-        border-radius: 15px 15px 0 0;
-        margin-bottom: 0;
+        border-radius: 15px;
+        margin-bottom: 1rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
-    .header-title {
-        color: white;
-        font-size: 2rem;
-        font-weight: 700;
+    .header-text h1 {
         margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
     }
     
-    .header-subtitle {
-        color: rgba(255,255,255,0.9);
-        font-size: 1rem;
-        margin-top: 0.5rem;
+    .header-text p {
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .examples-container {
+        margin: 1rem 0;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .examples-title {
+        color: #4a5568;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
         text-align: center;
     }
     
-    /* Chat container */
-    #chatbot {
-        height: 500px !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
-        background: #ffffff !important;
-    }
-    
-    /* Message styling */
-    .message {
-        padding: 1rem !important;
-        margin: 0.5rem !important;
-        border-radius: 12px !important;
-        font-size: 15px !important;
-        line-height: 1.6 !important;
-    }
-    
-    .user-message {
-        background: #f3f4f6 !important;
-        border: 1px solid #e5e7eb !important;
-        margin-left: 20% !important;
-    }
-    
-    .bot-message {
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        margin-right: 20% !important;
-    }
-    
-    /* Input area */
-    #input-box {
-        border: 2px solid #e5e7eb !important;
-        border-radius: 12px !important;
-        padding: 14px 16px !important;
-        font-size: 15px !important;
-        transition: all 0.3s ease !important;
-        background: #ffffff !important;
-    }
-    
-    #input-box:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        outline: none !important;
-    }
-    
-    /* Buttons */
-    .primary-btn {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    .reset-btn {
+        background: #f56565 !important;
         color: white !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 12px 24px !important;
+        border-radius: 8px !important;
+        padding: 0.5rem 1rem !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
-        cursor: pointer !important;
-        transition: transform 0.2s ease !important;
+        margin: 0.5rem 0 !important;
     }
     
-    .primary-btn:hover {
+    .reset-btn:hover {
+        background: #e53e3e !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
-    }
-    
-    .secondary-btn {
-        background: #f3f4f6 !important;
-        color: #374151 !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 10px !important;
-        padding: 10px 20px !important;
-        font-weight: 500 !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    .secondary-btn:hover {
-        background: #e5e7eb !important;
-        border-color: #d1d5db !important;
-    }
-    
-    /* Example chips */
-    .example-chip {
-        display: inline-block !important;
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 20px !important;
-        padding: 8px 16px !important;
-        margin: 4px !important;
-        font-size: 14px !important;
-        color: #4b5563 !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    .example-chip:hover {
-        background: #f9fafb !important;
-        border-color: #667eea !important;
-        color: #667eea !important;
-        transform: translateY(-1px) !important;
-    }
-    
-    /* Info cards */
-    .info-card {
-        background: linear-gradient(135deg, #f6f8fb 0%, #f1f5f9 100%);
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1rem;
-        margin: 1rem 0;
-    }
-    
-    /* Responsive design */
-    @media (max-width: 768px) {
-        .gradio-container {
-            padding: 0 !important;
-        }
-        
-        .header-title {
-            font-size: 1.5rem;
-        }
-        
-        .user-message, .bot-message {
-            margin-left: 5% !important;
-            margin-right: 5% !important;
-        }
     }
     """
     
-    with gr.Blocks(css=custom_css, theme=gr.themes.Base()) as app:
+    with gr.Blocks(css=custom_css, title="AI Assistant + Healthcare Billing Expert") as demo:
         # Header
         gr.HTML("""
-            <div class="header-container">
-                <h1 class="header-title">
-                    <span>🤖</span>
-                    <span>AI Assistant</span>
-                    <span style="font-size: 0.8em; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px;">PLUS</span>
-                </h1>
-                <p class="header-subtitle">Your intelligent companion for any question + Healthcare Billing Expert</p>
+            <div class="header-text">
+                <h1>🤖 AI Assistant <span style="font-size: 0.6em; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px;">PLUS</span></h1>
+                <p>Your intelligent companion for any question + Healthcare Billing Expert</p>
             </div>
         """)
         
-        # Main chat interface
-        chatbot_ui = gr.Chatbot(
-            value=[
-                {
-                    "role": "assistant",
-                    "content": "👋 **Hello! I'm your AI Assistant!**\n\nI can help you with:\n\n🏥 **Healthcare Billing Codes** - I'm an expert in CPT, HCPCS, ICD-10, and DRG codes\n💬 **General Conversation** - Ask me anything!\n📚 **Learning & Education** - Help with various topics\n✍️ **Writing & Creation** - Stories, emails, ideas\n🔧 **Problem Solving** - Let's work through challenges together\n\n**Try asking:**\n• 'What is billing code A0429?'\n• 'Help me write an email'\n• 'Explain quantum physics simply'\n• 'What's the weather like?'\n\nHow can I assist you today? 😊"
-                }
-            ],
-            elem_id="chatbot",
-            show_label=False,
-            type="messages",
-            height=500
+        # Main Chat Interface
+        chat_interface = gr.ChatInterface(
+            fn=respond_stream,
+            title="",  # We have custom header
+            description="",  # We have custom header
+            examples=examples,
+            cache_examples=False,
+            retry_btn="🔄 Retry",
+            undo_btn="↩️ Undo",
+            clear_btn="🗑️ Clear",
+            submit_btn="Send 📤",
+            chatbot=gr.Chatbot(
+                height=600,
+                show_copy_button=True,
+                show_share_button=False,
+                avatar_images=["👤", "🤖"]
+            ),
+            textbox=gr.Textbox(
+                placeholder="Ask me anything... (e.g., 'Explain code 99213' or 'Help me write a story')",
+                scale=7,
+                lines=1,
+                max_lines=8
+            )
         )
         
-        # Input section
+        # Additional controls
         with gr.Row():
-            msg = gr.Textbox(
-                placeholder="Ask me anything... (e.g., 'Explain code 99213' or 'Help me write a story')",
-                show_label=False,
-                elem_id="input-box",
-                scale=5,
-                lines=1,
-                max_lines=5
-            )
-            send_btn = gr.Button("Send", elem_classes="primary-btn", scale=1)
+            with gr.Column(scale=1):
+                reset_context_btn = gr.Button("🔄 Reset Context", elem_classes="reset-btn", size="sm")
+            with gr.Column(scale=3):
+                gr.HTML("")  # Spacer
+            with gr.Column(scale=1):
+                gr.HTML("""
+                    <div style='text-align: right; color: #718096; font-size: 12px; margin-top: 0.5rem;'>
+                        Powered by GPT-3.5 Turbo<br>
+                        Healthcare Billing Database
+                    </div>
+                """)
         
-        # Quick examples
-        gr.HTML("<div style='text-align: center; margin: 1rem 0; color: #6b7280; font-size: 14px;'>Quick Examples</div>")
-        
-        with gr.Row():
-            ex_col1 = gr.Column(scale=1)
-            ex_col2 = gr.Column(scale=1)
-            ex_col3 = gr.Column(scale=1)
-        
-        with ex_col1:
-            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>🏥 Medical Billing</div>")
-            ex1 = gr.Button("What is code A0429?", elem_classes="example-chip", size="sm")
-            ex2 = gr.Button("Explain CPT 99213", elem_classes="example-chip", size="sm")
-            ex3 = gr.Button("DRG 470 details", elem_classes="example-chip", size="sm")
-        
-        with ex_col2:
-            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>💭 General Questions</div>")
-            ex4 = gr.Button("How does AI work?", elem_classes="example-chip", size="sm")
-            ex5 = gr.Button("Recipe for pasta", elem_classes="example-chip", size="sm")
-            ex6 = gr.Button("Python tutorial", elem_classes="example-chip", size="sm")
-        
-        with ex_col3:
-            gr.HTML("<div style='color: #667eea; font-weight: 600; font-size: 13px; margin-bottom: 8px;'>✍️ Creative Help</div>")
-            ex7 = gr.Button("Write a poem", elem_classes="example-chip", size="sm")
-            ex8 = gr.Button("Email template", elem_classes="example-chip", size="sm")
-            ex9 = gr.Button("Story ideas", elem_classes="example-chip", size="sm")
-        
-        # Control buttons
-        with gr.Row():
-            clear_btn = gr.Button("🔄 New Chat", elem_classes="secondary-btn", size="sm")
-            gr.HTML("<div style='flex-grow: 1;'></div>")
+        # Info section
+        with gr.Accordion("ℹ️ About This Assistant", open=False):
             gr.HTML("""
-                <div style='text-align: right; color: #6b7280; font-size: 12px;'>
-                    Powered by GPT-3.5 • Healthcare Billing Database
+                <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; margin: 0.5rem 0;">
+                    <h4 style="color: #2d3748; margin-top: 0;">🏥 Healthcare Billing Expert</h4>
+                    <p style="color: #4a5568; margin-bottom: 1rem;">I'm specialized in healthcare billing codes including:</p>
+                    <ul style="color: #4a5568; margin: 0.5rem 0;">
+                        <li><strong>CPT Codes</strong> - Current Procedural Terminology</li>
+                        <li><strong>HCPCS</strong> - Healthcare Common Procedure Coding System</li>
+                        <li><strong>ICD-10</strong> - International Classification of Diseases</li>
+                        <li><strong>DRG</strong> - Diagnosis-Related Groups</li>
+                    </ul>
+                    
+                    <h4 style="color: #2d3748;">💬 General AI Assistant</h4>
+                    <p style="color: #4a5568; margin: 0;">I can also help with general questions, writing, coding, learning, and creative tasks!</p>
                 </div>
             """)
         
-        # Footer info
-        gr.HTML("""
-            <div class="info-card" style="margin-top: 2rem;">
-                <div style="display: flex; justify-content: space-around; text-align: center;">
-                    <div>
-                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">15+</div>
-                        <div style="color: #6b7280; font-size: 12px;">Medical Codes</div>
-                    </div>
-                    <div>
-                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">∞</div>
-                        <div style="color: #6b7280; font-size: 12px;">Topics</div>
-                    </div>
-                    <div>
-                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">24/7</div>
-                        <div style="color: #6b7280; font-size: 12px;">Available</div>
-                    </div>
-                    <div>
-                        <div style="color: #667eea; font-size: 24px; font-weight: bold;">Fast</div>
-                        <div style="color: #6b7280; font-size: 12px;">Responses</div>
-                    </div>
-                </div>
-            </div>
-        """)
-        
-        # Event handlers
-        def respond(message, chat_history):
-            if not message.strip():
-                return "", chat_history
-            
-            # Process message
-            response = assistant.process_message(message)
-            
-            # Update chat history
-            chat_history.append({"role": "user", "content": message})
-            chat_history.append({"role": "assistant", "content": response})
-            
-            return "", chat_history
-        
-        def clear_chat():
-            assistant.reset_context()
-            welcome_msg = {
-                "role": "assistant",
-                "content": "👋 **Chat cleared! Ready for a new conversation.**\n\nI'm here to help with anything you need - from healthcare billing codes to general questions!\n\nWhat would you like to know? 😊"
-            }
-            return [welcome_msg]
-        
-        # Connect events
-        msg.submit(respond, [msg, chatbot_ui], [msg, chatbot_ui])
-        send_btn.click(respond, [msg, chatbot_ui], [msg, chatbot_ui])
-        clear_btn.click(clear_chat, outputs=[chatbot_ui])
-        
-        # Example button handlers
-        ex1.click(lambda: "What is healthcare billing code A0429?", outputs=msg)
-        ex2.click(lambda: "Can you explain CPT code 99213 in detail?", outputs=msg)
-        ex3.click(lambda: "Tell me about DRG 470", outputs=msg)
-        ex4.click(lambda: "How does artificial intelligence work?", outputs=msg)
-        ex5.click(lambda: "Give me a simple pasta recipe", outputs=msg)
-        ex6.click(lambda: "Teach me Python basics", outputs=msg)
-        ex7.click(lambda: "Write a short poem about nature", outputs=msg)
-        ex8.click(lambda: "Help me write a professional email template", outputs=msg)
-        ex9.click(lambda: "Give me creative story ideas", outputs=msg)
+        # Connect reset button
+        reset_context_btn.click(
+            fn=reset_chat,
+            inputs=None,
+            outputs=None
+        ).then(
+            lambda: gr.Info("Context reset! Starting fresh conversation.")
+        )
     
-    return app
+    return demo
 
-# Launch
+# ============= Launch =============
+
 if __name__ == "__main__":
     app = create_interface()
     app.launch(
         server_name="0.0.0.0",
         server_port=7860,
-        share=False
+        share=False,
+        show_error=True
     )
