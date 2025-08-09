@@ -61,19 +61,15 @@ def generate_response_streaming(message, history):
     except requests.exceptions.RequestException as e:
         yield f"An error occurred: {e}"
 
-# Create the ChatInterface with streaming and additional features
+# Create the ChatInterface with streaming and supported features
 demo = gr.ChatInterface(
     generate_response_streaming,
     type="messages",  # Use the modern messages format
     theme=gr.themes.Glass(),  # Keep your Glass theme
     title="My Glassy Streaming Chatbot",
-    description="A streaming chatbot powered by OpenRouter API",
     flagging_mode="manual",  # Enable manual flagging like in the example
     flagging_options=["Like", "Spam", "Inappropriate", "Other"],  # Flagging options
     save_history=True,  # Save chat history
-    retry_btn=True,  # Add retry button
-    undo_btn=True,   # Add undo button
-    clear_btn=True,  # Add clear button
 )
 
 if __name__ == "__main__":
