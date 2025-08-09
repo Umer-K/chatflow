@@ -40,7 +40,7 @@ custom_css = """
     border: none !important;
 }
 
-/* Hide the chatbot label on the front page */
+/* Hide the chatbot label on the front page and in chat */
 #chatbot label {
     display: none;
 }
@@ -131,13 +131,22 @@ custom_css = """
 """
 
 def generate_response(message, history):
+    """
+    Function to call the OpenRouter API with the user's message and stream the response.
+    Returns:
+    - Updated history for the chatbot component
+    - Updated history for the state variable
+    - An empty string for the textbox component to clear it
+    """
     if not OPENROUTER_API_KEY:
-        yield "Error: OPENROUTER_API_KEY not set."
+        error_message = "Error: OPENROUTER_API_KEY not set. Please set this environment variable."
+        history.append((message, error_message))
+        yield history, history, ""
         return
 
     # Add the user's message to the history first, for immediate display
     history.append((message, ""))
-    yield history
+    yield history, history, ""
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -174,14 +183,14 @@ def generate_response(message, history):
                     chunk = json_data['choices'][0]['delta'].get('content', '')
                     full_response += chunk
                     history[-1] = (message, full_response)
-                    yield history
+                    yield history, history, ""
                     
     except requests.exceptions.RequestException as e:
         history[-1] = (message, f"An error occurred: {e}")
-        yield history
+        yield history, history, ""
     except Exception as e:
         history[-1] = (message, f"An unexpected error occurred: {e}")
-        yield history
+        yield history, history, ""
 
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     state = gr.State(value=[])
@@ -221,4 +230,4 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
         [chatbot, state, msg]
     )
 
-demo.launch()
+demo.queue().launch()
