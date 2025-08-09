@@ -1,12 +1,14 @@
 ---
-title: AI Assistant 2025
-emoji: 🤖
+title: 'ChatFlow '
+emoji: 📚
 colorFrom: blue
-colorTo: purple
+colorTo: pink
 sdk: streamlit
-sdk_version: "1.28.1"
+sdk_version: 1.28.1
 app_file: app.py
 pinned: false
+license: mit
+short_description: One interface, 15+ AI models, persistent chat.
 ---
 
 # AI Assistant 2025 🤖
