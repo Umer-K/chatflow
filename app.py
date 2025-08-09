@@ -38,100 +38,101 @@ with gr.Blocks(
     css="""
         /* 2025 Gen Z-inspired aesthetic: creme color palette, clean spacing, modern vibes */
         body {
-            background: linear-gradient(135deg, #f5e9dd 0%, #e8d8c4 100%);
+            background: linear-gradient(135deg, #fffaf4 0%, #f8ece0 100%);
             font-family: 'Inter', sans-serif;
-            color: #3c2f2f;
+            color: #4a4035;
         }
         .gr-block {
             max-width: 800px;
-            margin: 40px auto;
-            border-radius: 20px;
-            background: rgba(255, 245, 230, 0.9);
+            margin: 50px auto;
+            border-radius: 25px;
+            background: rgba(255, 250, 244, 0.95);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(60, 47, 47, 0.1);
-            padding: 30px;
+            box-shadow: 0 10px 30px rgba(74, 64, 53, 0.1);
+            padding: 40px;
         }
         .gr-chatbot {
             background: transparent;
             border: none;
-            height: 500px;
+            height: 600px;
             overflow-y: auto;
             scrollbar-width: thin;
-            scrollbar-color: #d4a373 #f5e9dd;
+            scrollbar-color: #d9b99b #fffaf4;
         }
         .gr-chatbot .message {
-            margin: 20px 10px; /* Increased margin for better spacing */
-            padding: 15px 20px; /* Increased padding for better text flow */
-            border-radius: 15px;
-            max-width: 75%;
-            line-height: 1.6; /* Improved line height for readability */
-            white-space: pre-wrap; /* Ensure text wraps correctly */
+            margin: 25px 15px; /* Increased margin for better spacing */
+            padding: 20px 25px; /* Increased padding for better text flow */
+            border-radius: 18px;
+            max-width: 70%;
+            line-height: 1.8; /* Improved line height for readability */
+            white-space: normal; /* Ensure text wraps naturally */
             transition: transform 0.2s ease;
+            word-wrap: break-word; /* Prevent text overflow */
         }
         .gr-chatbot .message.user {
-            background: linear-gradient(45deg, #d4a373, #e8c39e);
-            color: #3c2f2f;
+            background: linear-gradient(45deg, #d9b99b, #e8d4c0);
+            color: #4a4035;
             margin-left: auto;
-            box-shadow: 0 4px 15px rgba(212, 163, 115, 0.3);
+            box-shadow: 0 6px 20px rgba(217, 185, 155, 0.3);
         }
         .gr-chatbot .message.bot {
-            background: linear-gradient(45deg, #a8dadc, #c9e4de);
-            color: #3c2f2f;
+            background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
+            color: #4a4035;
             margin-right: auto;
-            box-shadow: 0 4px 15px rgba(168, 218, 220, 0.3);
+            box-shadow: 0 6px 20px rgba(184, 216, 216, 0.3);
         }
         .gr-textbox {
-            background: rgba(255, 245, 230, 0.7);
-            border: 1px solid rgba(60, 47, 47, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            color: #3c2f2f;
+            background: rgba(255, 250, 244, 0.8);
+            border: 2px solid rgba(74, 64, 53, 0.2);
+            border-radius: 15px;
+            padding: 18px;
+            color: #4a4035;
             font-size: 16px;
             transition: all 0.3s ease;
         }
         .gr-textbox:focus {
-            border-color: #d4a373;
-            box-shadow: 0 0 10px rgba(212, 163, 115, 0.5);
-            background: rgba(255, 245, 230, 0.9);
+            border-color: #d9b99b;
+            box-shadow: 0 0 12px rgba(217, 185, 155, 0.5);
+            background: rgba(255, 250, 244, 0.95);
         }
         .gr-textbox::placeholder {
-            color: rgba(60, 47, 47, 0.5);
+            color: rgba(74, 64, 53, 0.5);
         }
         .gr-button {
-            background: linear-gradient(45deg, #d4a373, #e8c39e);
-            color: #3c2f2f;
+            background: linear-gradient(45deg, #d9b99b, #e8d4c0);
+            color: #4a4035;
             border: none;
-            border-radius: 12px;
-            padding: 12px 24px;
+            border-radius: 15px;
+            padding: 14px 28px;
             font-weight: 600;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .gr-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(212, 163, 115, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(217, 185, 155, 0.4);
         }
         h1 {
-            font-size: 30px;
+            font-size: 32px;
             text-align: center;
-            background: linear-gradient(45deg, #d4a373, #a8dadc);
+            background: linear-gradient(45deg, #d9b99b, #b8d8d8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
         }
         /* Custom scrollbar for modern look */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 10px;
         }
         ::-webkit-scrollbar-track {
-            background: #f5e9dd;
-            border-radius: 10px;
+            background: #fffaf4;
+            border-radius: 12px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #d4a373;
-            border-radius: 10px;
+            background: #d9b99b;
+            border-radius: 12px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #e8c39e;
+            background: #e8d4c0;
         }
     """
 ) as demo:
