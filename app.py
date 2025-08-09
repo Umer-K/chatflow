@@ -199,16 +199,30 @@ def generate_response(message, history):
         history[-1] = (message, f"An unexpected error occurred: {e}")
         yield history, history, ""
 
+def toggle_chat_visibility(history):
+    """
+    Hides the welcome messages and shows the chatbot when a message is sent.
+    """
+    if history:
+        return gr.update(visible=True), gr.update(visible=False)
+    else:
+        return gr.update(visible=False), gr.update(visible=True)
+
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     state = gr.State(value=[])
     
     with gr.Column(elem_classes="main-chat-area"):
-        # The welcome text and subtitle, visible on the front page
-        gr.Markdown("# Introducing GPT-5", elem_id="welcome-header")
-        gr.Markdown("ChatGPT now has our smartest, fastest, most useful model yet, with thinking built in—so you get the best answer, every time.", elem_id="welcome-subtitle")
+        # The welcome text and subtitle, now in a separate column
+        welcome_column = gr.Column(visible=True, elem_id="welcome-container")
+        with welcome_column:
+            gr.Markdown("# Introducing GPT-5", elem_id="welcome-header")
+            gr.Markdown("ChatGPT now has our smartest, fastest, most useful model yet, with thinking built in—so you get the best answer, every time.", elem_id="welcome-subtitle")
 
-        chatbot = gr.Chatbot(elem_id="chatbot", label=None)
-        
+        # The chatbot component, initially hidden
+        chatbot_column = gr.Column(visible=False, elem_id="chatbot-container")
+        with chatbot_column:
+            chatbot = gr.Chatbot(elem_id="chatbot", label=None)
+
         with gr.Column(elem_classes="chat-input-area"):
             with gr.Row(elem_classes="input-box", variant="panel"):
                 msg = gr.Textbox(
@@ -226,15 +240,25 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                 )
 
     # Event handlers
+    # Update the UI and call the API when a message is submitted
     msg.submit(
         generate_response,
         [msg, state],
         [chatbot, state, msg]
+    ).then(
+        toggle_chat_visibility,
+        [state],
+        [welcome_column, chatbot_column]
     )
+
     send_button.click(
         generate_response,
         [msg, state],
         [chatbot, state, msg]
+    ).then(
+        toggle_chat_visibility,
+        [state],
+        [welcome_column, chatbot_column]
     )
 
 demo.queue().launch()
