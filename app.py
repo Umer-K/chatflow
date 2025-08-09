@@ -9,7 +9,7 @@ import os
 from typing import List, Tuple
 
 # Configuration
-API_KEY = os.getenv('OPENROUTER_API_KEY')
+API_KEY = os.getenv('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')
 MODEL = "openai/gpt-3.5-turbo"  # Try "anthropic/claude-3-sonnet" for better answers
 
 class AIAssistant:
