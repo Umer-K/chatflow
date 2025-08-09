@@ -10,7 +10,7 @@ import random
 from typing import Optional
 
 # Configuration - SET YOUR API KEY IN HUGGINGFACE SPACES SECRETS
-API_KEY = os.getenv('OPENROUTER_API_KEY')
+API_KEY = os.getenv('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')
 API_ENABLED = bool(API_KEY)  # Auto-disable if no API key
 
 # Model Configuration
