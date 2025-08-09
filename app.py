@@ -192,6 +192,28 @@ with st.sidebar:
     
     st.divider()
     
+    # View History
+    if st.button("View History File", use_container_width=True):
+        if os.path.exists(HISTORY_FILE):
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                history_content = f.read()
+            st.text_area("Chat History (JSON)", history_content, height=200)
+        else:
+            st.warning("No history file found")
+    
+    # Download History
+    if os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, 'rb') as f:
+            st.download_button(
+                label="Download History",
+                data=f.read(),
+                file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json",
+                use_container_width=True
+            )
+    
+    st.divider()
+    
     # Clear controls
     if st.button("Clear Chat", use_container_width=True, type="secondary"):
         clear_chat_history()
