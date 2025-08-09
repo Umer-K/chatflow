@@ -2,6 +2,7 @@ import requests
 import os
 import json
 import time
+import streamlit as st
 
 # Page configuration
 st.set_page_config(
@@ -78,6 +79,8 @@ st.markdown("""
     }
     
     .stChatMessage[data-testid*="user"] .stMarkdown {
+        background-color: #007bff !important;
+        color: white !important;
         border-radius: 18px 18px 4px 18px !important;
         padding: 12px 16px !important;
         margin-left: 12px !important;
@@ -91,6 +94,8 @@ st.markdown("""
     }
     
     .stChatMessage[data-testid*="assistant"] .stMarkdown {
+        background-color: #f8f9fa !important;
+        color: #2d3748 !important;
         border-radius: 18px 18px 18px 4px !important;
         padding: 12px 16px !important;
         margin-right: 12px !important;
@@ -103,36 +108,40 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Beautiful chat input - transparent */
+    /* Fixed chat input styling - removed problematic background */
     .stChatInputContainer {
         border: none !important;
         background: transparent !important;
-        padding: 2rem 0 !important;
+        padding: 1rem 0 !important;
     }
     
-
     .stChatInputContainer > div {
-        border: 1px solid rgba(255,255,255,0.3) !important;
+        border: 2px solid #e2e8f0 !important;
         border-radius: 24px !important;
-        background: rgba(255,255,255,0.15) !important;
-        backdrop-filter: blur(10px) !important;
-        box-shadow: none !important;
-        padding: 2px !important;
+        background: white !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        overflow: hidden !important;
     }
     
     .stChatInputContainer textarea {
         border: none !important;
-        background: transparent !important;
+        background: white !important;
         padding: 12px 20px !important;
         font-size: 1rem !important;
-        color: white !important;
+        color: #2d3748 !important;
         font-family: 'Inter', sans-serif !important;
         resize: none !important;
+        outline: none !important;
     }
     
     .stChatInputContainer textarea::placeholder {
-        color: rgba(255,255,255,0.7) !important;
+        color: #a0aec0 !important;
         font-weight: 400 !important;
+    }
+    
+    .stChatInputContainer textarea:focus {
+        outline: none !important;
+        box-shadow: none !important;
     }
     
     /* Sidebar styling */
@@ -191,13 +200,20 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
     
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}"
     }
     
     api_messages = [{"role": "system", "content": "You are a helpful AI assistant. Provide clear and helpful responses."}]
     api_messages.extend(messages)
     
     data = {
+        "model": model,
+        "messages": api_messages,
+        "stream": True,
+        "max_tokens": 1000,
+        "temperature": 0.7
+    }
     
     try:
         response = requests.post(url, headers=headers, json=data, stream=True, timeout=30)
@@ -206,6 +222,15 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
         full_response = ""
         for line in response.iter_lines():
             if line:
+                line_str = line.decode('utf-8')
+                if line_str.startswith('data: '):
+                    line_str = line_str[6:]
+                    if line_str.strip() == '[DONE]':
+                        break
+                    try:
+                        data = json.loads(line_str)
+                        if 'choices' in data and len(data['choices']) > 0:
+                            delta = data['choices'][0].get('delta', {})
                             if 'content' in delta:
                                 full_response += delta['content']
                                 yield full_response
@@ -244,8 +269,6 @@ with st.sidebar:
     selected_model = st.selectbox("Model", models, index=0)
     
     st.divider()
-
-
     
     # Controls
     if st.button("Clear Chat", use_container_width=True):
