@@ -7,7 +7,7 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "gpt-3.5-turbo"
 
 if not OPENROUTER_API_KEY:
-    raise ValueError("OPENROUTER_API_KEY environment variable not set. Please set it before running.")
+    raise ValueValue("OPENROUTER_API_KEY environment variable not set. Please set it before running.")
 
 headers = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -36,7 +36,7 @@ def chatbot(user_message, history):
 
 with gr.Blocks(
     css="""
-        /* Instagram-inspired chat layout with creme palette */
+        /* Optimized Instagram-inspired layout with reduced empty space */
         body {
             background: linear-gradient(135deg, #fffaf4 0%, #f8ece0 100%);
             font-family: 'Inter', sans-serif;
@@ -64,44 +64,30 @@ with gr.Blocks(
             padding: 5px 0;
         }
         .gr-chatbot .message {
-            margin: 10px 20px 10px 60px;
+            margin: 10px 10px;
             padding: 8px 15px;
             border-radius: 10px;
-            max-width: 300px;
+            max-width: 70%; /* Wider bubbles to fill space */
             min-height: 40px;
             line-height: 1.4;
             white-space: normal;
             word-wrap: break-word;
             transition: transform 0.2s ease;
             display: inline-block;
-            position: relative;
         }
         .gr-chatbot .message.user {
             background: linear-gradient(45deg, #d9b99b, #e8d4c0);
             color: #4a4035;
             margin-left: auto;
-            margin-right: 60px;
+            margin-right: 10px;
             box-shadow: 0 3px 10px rgba(217, 185, 155, 0.2);
         }
         .gr-chatbot .message.bot {
             background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
             color: #4a4035;
             margin-right: auto;
-            margin-left: 60px;
+            margin-left: 10px;
             box-shadow: 0 3px 10px rgba(184, 216, 216, 0.2);
-        }
-        .gr-chatbot .message .avatar {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            top: -10px;
-        }
-        .gr-chatbot .message.user .avatar {
-            right: -50px;
-        }
-        .gr-chatbot .message.bot .avatar {
-            left: -50px;
         }
         .gr-textbox {
             background: rgba(255, 250, 244, 0.8);
@@ -110,13 +96,8 @@ with gr.Blocks(
             padding: 8px 12px;
             color: #4a4035;
             font-size: 14px;
-            width: 70%;
-            max-width: 300px;
             height: 35px;
-            margin: 5px 0;
             transition: all 0.3s ease;
-            display: inline-block;
-            vertical-align: middle;
         }
         .gr-textbox:focus {
             border-color: #d9b99b;
@@ -134,8 +115,6 @@ with gr.Blocks(
             padding: 8px 15px;
             font-weight: 600;
             height: 35px;
-            vertical-align: middle;
-            margin-left: 5px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .gr-button:hover {
@@ -149,6 +128,9 @@ with gr.Blocks(
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 5px 0;
+        }
+        .gr-row {
+            align-items: center;
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -169,11 +151,12 @@ with gr.Blocks(
 ) as demo:
     gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")
     chatbot_ui = gr.Chatbot(elem_classes=["gr-chatbot"])
-    user_input = gr.Textbox(placeholder="Type here...", show_label=False)
-    submit_btn = gr.Button("Send", variant="primary")
+    with gr.Row():
+        user_input = gr.Textbox(placeholder="Type here...", show_label=False, scale=4)
+        submit_btn = gr.Button("Send", variant="primary", scale=1)
     state = gr.State([])
 
     user_input.submit(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
-    submit_btn.click(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])  # Fixed syntax error
+    submit_btn.click(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
 
 demo.launch()
