@@ -62,17 +62,22 @@ with gr.Blocks(
             scrollbar-width: thin;
             scrollbar-color: #d9b99b #fffaf4;
             padding: 5px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .gr-chatbot::before {
+            content: "";
+            flex: 1;
         }
         .gr-chatbot .message {
-            margin: 10px 10px;
-            padding: 8px 15px;
+            margin: 5px 10px;
+            padding: 6px 12px;
             border-radius: 10px;
             max-width: 70%; /* Wider bubbles to fill space */
-            min-height: 40px;
-            line-height: 1.4;
+            height: auto;
+            line-height: 1.2;
             white-space: normal;
             word-wrap: break-word;
-            transition: transform 0.2s ease;
             display: inline-block;
         }
         .gr-chatbot .message.user {
@@ -147,13 +152,17 @@ with gr.Blocks(
         ::-webkit-scrollbar-thumb:hover {
             background: #e8d4c0;
         }
+        /* Attempt to hide tabs if present */
+        .gr-tabitem {
+            display: none;
+        }
     """
 ) as demo:
     gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")
     chatbot_ui = gr.Chatbot(elem_classes=["gr-chatbot"])
     with gr.Row():
         user_input = gr.Textbox(placeholder="Type here...", show_label=False, scale=4)
-        submit_btn = gr.Button("Send", variant="primary", scale=1)
+        submit_btn = gr.Button("Send", scale=1)  # Removed variant="primary" to avoid orange color
     state = gr.State([])
 
     user_input.submit(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
