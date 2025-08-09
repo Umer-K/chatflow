@@ -2,6 +2,8 @@ import requests
 import os
 import json
 import streamlit as st
+from datetime import datetime
+import pickle
 
 # Page configuration
 st.set_page_config(
@@ -28,9 +30,39 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state
+# File to store chat history
+HISTORY_FILE = "chat_history.json"
+
+def load_chat_history():
+    """Load chat history from file"""
+    try:
+        if os.path.exists(HISTORY_FILE):
+            with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        st.error(f"Error loading chat history: {e}")
+    return []
+
+def save_chat_history(messages):
+    """Save chat history to file"""
+    try:
+        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Error saving chat history: {e}")
+
+def clear_chat_history():
+    """Clear chat history file"""
+    try:
+        if os.path.exists(HISTORY_FILE):
+            os.remove(HISTORY_FILE)
+        st.session_state.messages = []
+    except Exception as e:
+        st.error(f"Error clearing chat history: {e}")
+
+# Initialize session state with saved history
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    st.session_state.messages = load_chat_history()
 
 # Get API key
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
@@ -123,9 +155,35 @@ with st.sidebar:
     
     st.divider()
     
-    # Controls
-    if st.button("Clear Chat", use_container_width=True):
-        st.session_state.messages = []
+    # Chat History Controls
+    st.header("Chat History")
+    
+    # Show number of messages
+    if st.session_state.messages:
+        st.info(f"Messages stored: {len(st.session_state.messages)}")
+    
+    # Auto-save toggle
+    auto_save = st.checkbox("Auto-save messages", value=True)
+    
+    # Manual save/load buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Save History", use_container_width=True):
+            save_chat_history(st.session_state.messages)
+            st.success("History saved!")
+    
+    with col2:
+        if st.button("Load History", use_container_width=True):
+            st.session_state.messages = load_chat_history()
+            st.success("History loaded!")
+            st.rerun()
+    
+    st.divider()
+    
+    # Clear controls
+    if st.button("Clear Chat", use_container_width=True, type="secondary"):
+        clear_chat_history()
+        st.success("Chat cleared!")
         st.rerun()
 
 # Show welcome message when no messages
@@ -140,7 +198,12 @@ for message in st.session_state.messages:
 # Chat input
 if prompt := st.chat_input("Ask anything..."):
     # Add user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    user_message = {"role": "user", "content": prompt}
+    st.session_state.messages.append(user_message)
+    
+    # Auto-save if enabled
+    if auto_save:
+        save_chat_history(st.session_state.messages)
     
     # Display user message
     with st.chat_message("user"):
@@ -158,4 +221,9 @@ if prompt := st.chat_input("Ask anything..."):
         placeholder.markdown(full_response)
     
     # Add AI response to messages
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    assistant_message = {"role": "assistant", "content": full_response}
+    st.session_state.messages.append(assistant_message)
+    
+    # Auto-save if enabled
+    if auto_save:
+        save_chat_history(st.session_state.messages)
