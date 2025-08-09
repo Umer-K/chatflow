@@ -25,311 +25,253 @@ def query_openrouter(messages):
     data = response.json()
     return data["choices"][0]["message"]["content"]
 
-def chatbot(user_message, history):
-    if history is None:
-        history = []
+def chatbot_response(message, history):
+    if not message.strip():
+        return history, ""
     
-    # Add user message to history
-    history.append(["", user_message])  # Empty string for user, message for assistant
+    # Convert history to API format
+    api_messages = []
+    for h in history:
+        if h[0]:  # User message
+            api_messages.append({"role": "user", "content": h[0]})
+        if h[1]:  # Assistant message  
+            api_messages.append({"role": "assistant", "content": h[1]})
     
-    # Get bot response
-    messages = []
-    for pair in history:
-        if pair[1]:  # User message
-            messages.append({"role": "user", "content": pair[1]})
-        if pair[0]:  # Assistant message
-            messages.append({"role": "assistant", "content": pair[0]})
+    # Add current message
+    api_messages.append({"role": "user", "content": message})
     
-    # Add the latest user message
-    messages.append({"role": "user", "content": user_message})
+    # Get response
+    bot_reply = query_openrouter(api_messages)
     
-    bot_reply = query_openrouter(messages)
+    # Add to history
+    history.append([message, bot_reply])
     
-    # Update the last pair with bot response
-    history[-1][0] = bot_reply
-    
-    return history, "", history
+    return history, ""
 
-with gr.Blocks(
-    title="Aesthetic AI Chatbot",
-    css="""
-        /* Modern aesthetic chat interface */
-        .gradio-container {
-            background: linear-gradient(135deg, #f8f4f0 0%, #f0e6d8 100%);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            min-height: 100vh;
-        }
-        
-        /* Hide default Gradio elements */
-        .gr-button-lg, .gr-button-secondary, footer, .gradio-container .prose {
-            display: none !important;
-        }
-        
-        /* Main container */
-        .main-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        /* Header styling */
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #d4a574, #7fb3d1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-        
-        /* Chat container */
-        .chat-container {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* Chatbot styling */
-        .gr-chatbot {
-            flex: 1;
-            border: none !important;
-            background: transparent !important;
-            padding: 20px !important;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        /* Message bubbles */
-        .gr-chatbot .message-wrap {
-            display: flex;
-            width: 100%;
-        }
-        
-        .gr-chatbot .message-wrap:nth-child(odd) {
-            justify-content: flex-start; /* Bot messages */
-        }
-        
-        .gr-chatbot .message-wrap:nth-child(even) {
-            justify-content: flex-end; /* User messages */
-        }
-        
-        .gr-chatbot .message {
-            max-width: 75%;
-            padding: 12px 18px;
-            border-radius: 20px;
-            font-size: 15px;
-            line-height: 1.5;
-            word-wrap: break-word;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            animation: fadeIn 0.3s ease-out;
-            white-space: pre-wrap;
-        }
-        
-        /* Bot message styling */
-        .gr-chatbot .message-wrap:nth-child(odd) .message {
-            background: linear-gradient(135deg, #e8f4fd, #d1e8f5);
-            color: #2d3748;
-            border-bottom-left-radius: 8px;
-        }
-        
-        /* User message styling */
-        .gr-chatbot .message-wrap:nth-child(even) .message {
-            background: linear-gradient(135deg, #f5e6d3, #e8d4bf);
-            color: #2d3748;
-            border-bottom-right-radius: 8px;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Input area */
-        .input-area {
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(5px);
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .input-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-        
-        /* Text input styling */
-        .gr-textbox {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.9) !important;
-            border: 2px solid rgba(212, 165, 116, 0.3) !important;
-            border-radius: 20px !important;
-            padding: 12px 18px !important;
-            font-size: 15px !important;
-            color: #2d3748 !important;
-            transition: all 0.2s ease !important;
-            resize: none !important;
-        }
-        
-        .gr-textbox:focus {
-            border-color: #d4a574 !important;
-            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.1) !important;
-            background: rgba(255, 255, 255, 1) !important;
-        }
-        
-        .gr-textbox::placeholder {
-            color: rgba(45, 55, 72, 0.5) !important;
-        }
-        
-        /* Send button styling */
-        .send-button {
-            background: linear-gradient(135deg, #d4a574, #c49660) !important;
-            color: white !important;
-            border: none !important;
-            border-radius: 16px !important;
-            padding: 12px 24px !important;
-            font-weight: 600 !important;
-            font-size: 15px !important;
-            cursor: pointer !important;
-            transition: all 0.2s ease !important;
-            box-shadow: 0 4px 12px rgba(212, 165, 116, 0.3) !important;
-        }
-        
-        .send-button:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 6px 20px rgba(212, 165, 116, 0.4) !important;
-            background: linear-gradient(135deg, #c49660, #b8865a) !important;
-        }
-        
-        .send-button:active {
-            transform: translateY(0) !important;
-        }
-        
-        /* Custom scrollbar */
-        .gr-chatbot::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .gr-chatbot::-webkit-scrollbar-track {
-            background: rgba(212, 165, 116, 0.1);
-            border-radius: 3px;
-        }
-        
-        .gr-chatbot::-webkit-scrollbar-thumb {
-            background: rgba(212, 165, 116, 0.4);
-            border-radius: 3px;
-        }
-        
-        .gr-chatbot::-webkit-scrollbar-thumb:hover {
-            background: rgba(212, 165, 116, 0.6);
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 10px;
-            }
-            
-            .gr-chatbot .message {
-                max-width: 85%;
-                font-size: 14px;
-                padding: 10px 14px;
-            }
-            
-            .header h1 {
-                font-size: 24px;
-            }
-        }
-        
-        /* Hide Gradio branding and unnecessary elements */
-        .gr-interface > div:first-child, 
-        .gradio-container .gr-button-lg,
-        .gr-form > div:last-child,
-        .share-button,
-        .gr-block.gr-box > div:last-child {
-            display: none !important;
-        }
-    """
-) as demo:
-    
-    with gr.Column(elem_classes=["main-container"]):
-        # Header
-        with gr.Column(elem_classes=["header"]):
-            gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")
-        
-        # Chat area
-        with gr.Column(elem_classes=["chat-container"]):
-            chatbot_ui = gr.Chatbot(
-                elem_classes=["gr-chatbot"],
-                show_label=False,
-                container=False,
-                height=500,
-                bubble_full_width=False,
-                show_copy_button=False
-            )
-            
-            # Input area
-            with gr.Column(elem_classes=["input-area"]):
-                with gr.Row(elem_classes=["input-row"]):
-                    user_input = gr.Textbox(
-                        placeholder="Type your message here...",
-                        show_label=False,
-                        container=False,
-                        scale=4,
-                        lines=1,
-                        max_lines=4
-                    )
-                    submit_btn = gr.Button(
-                        "Send", 
-                        variant="primary",
-                        scale=1,
-                        elem_classes=["send-button"]
-                    )
+# Clean, modern CSS
+css = """
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
 
-    # State management
-    state = gr.State([])
+.gradio-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    min-height: 100vh !important;
+}
+
+/* Hide unwanted elements */
+footer, .gr-button-lg, .gradio-container > div > div:last-child {
+    display: none !important;
+}
+
+/* Main layout */
+.main-wrap {
+    max-width: 1000px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Title */
+.title-container h1 {
+    text-align: center !important;
+    color: #2c3e50 !important;
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 30px 0 !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Chat container */
+.chat-wrapper {
+    flex: 1 !important;
+    background: white !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Chatbot area */
+.gr-chatbot {
+    flex: 1 !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+    max-height: 500px !important;
+}
+
+.gr-chatbot > div {
+    gap: 15px !important;
+}
+
+/* Message styling */
+.gr-chatbot .user, .gr-chatbot .bot {
+    padding: 12px 18px !important;
+    border-radius: 18px !important;
+    max-width: 80% !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    margin: 5px 0 !important;
+    word-wrap: break-word !important;
+}
+
+.gr-chatbot .user {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    margin-left: auto !important;
+    border-bottom-right-radius: 5px !important;
+}
+
+.gr-chatbot .bot {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+    color: white !important;
+    margin-right: auto !important;
+    border-bottom-left-radius: 5px !important;
+}
+
+/* Input area */
+.input-section {
+    background: #f8f9fa !important;
+    padding: 20px !important;
+    border-top: 1px solid #e9ecef !important;
+}
+
+.input-row {
+    display: flex !important;
+    gap: 10px !important;
+    align-items: flex-end !important;
+}
+
+/* Text input */
+.message-input {
+    flex: 1 !important;
+    padding: 15px 20px !important;
+    border: 2px solid #e9ecef !important;
+    border-radius: 25px !important;
+    font-size: 16px !important;
+    background: white !important;
+    resize: none !important;
+    outline: none !important;
+    transition: border-color 0.3s ease !important;
+}
+
+.message-input:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+}
+
+/* Send button - FIXED */
+.send-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50px !important;
+    padding: 15px 30px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    min-width: 100px !important;
+    height: 50px !important;
+}
+
+.send-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+}
+
+.send-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Scrollbar */
+.gr-chatbot::-webkit-scrollbar {
+    width: 6px;
+}
+
+.gr-chatbot::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.gr-chatbot::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+.gr-chatbot::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-wrap {
+        padding: 10px !important;
+    }
+    
+    .title-container h1 {
+        font-size: 2rem !important;
+    }
+    
+    .gr-chatbot .user, .gr-chatbot .bot {
+        max-width: 90% !important;
+        font-size: 14px !important;
+    }
+}
+"""
+
+# Create interface
+with gr.Blocks(css=css, title="Aesthetic AI Chatbot") as demo:
+    
+    # Title
+    with gr.Column(elem_classes=["title-container"]):
+        gr.Markdown("# 💬 Aesthetic AI Chatbot")
+    
+    # Main chat area
+    with gr.Column(elem_classes=["chat-wrapper"]):
+        chatbot = gr.Chatbot(
+            elem_classes=["gr-chatbot"],
+            show_label=False,
+            container=False,
+            bubble_full_width=False
+        )
+        
+        # Input section
+        with gr.Column(elem_classes=["input-section"]):
+            with gr.Row(elem_classes=["input-row"]):
+                msg = gr.Textbox(
+                    placeholder="Type your message here...",
+                    show_label=False,
+                    container=False,
+                    scale=4,
+                    elem_classes=["message-input"]
+                )
+                send = gr.Button(
+                    "Send",
+                    scale=1,
+                    elem_classes=["send-btn"],
+                    variant="primary"
+                )
 
     # Event handlers
-    def handle_submit(user_message, history):
-        if not user_message.strip():
-            return history, "", history
-        return chatbot(user_message.strip(), history)
-
-    user_input.submit(
-        handle_submit, 
-        inputs=[user_input, state], 
-        outputs=[chatbot_ui, user_input, state]
-    )
-    
-    submit_btn.click(
-        handle_submit, 
-        inputs=[user_input, state], 
-        outputs=[chatbot_ui, user_input, state]
-    )
+    msg.submit(chatbot_response, [msg, chatbot], [chatbot, msg])
+    send.click(chatbot_response, [msg, chatbot], [chatbot, msg])
 
 if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",
         server_port=7860,
         show_api=False,
-        show_error=True,
-        quiet=False
+        show_error=True
     )
