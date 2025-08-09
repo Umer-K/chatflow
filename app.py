@@ -31,179 +31,129 @@ def chatbot(user_message, history):
     history.append({"role": "user", "content": user_message})
     bot_reply = query_openrouter(history)
     history.append({"role": "assistant", "content": bot_reply})
-    chat_display = []
-    for msg in history:
-        lines = msg["content"].split("\n")
-        for line in lines:
-            if line.strip():
-                if msg["role"] == "user":
-                    chat_display.append((line, None))
-                else:
-                    chat_display.append((None, line))
-    return chat_display, gr.update(value=""), history
+    chat_pairs = [(history[i]["content"], history[i+1]["content"]) for i in range(0, len(history)-1, 2)]
+    return chat_pairs, gr.update(value=""), history
 
 with gr.Blocks(
     css="""
-        @import ur[](https://fonts.googleapis.com/css?family=Montserrat);
-        * {
+        /* Optimized Instagram-inspired layout with reduced empty space */
+        body {
+            background: linear-gradient(135deg, #fffaf4 0%, #f8ece0 100%);
+            font-family: 'Inter', sans-serif;
+            color: #4a4035;
             margin: 0;
             padding: 0;
-            font-family: "Montserrat", sans-serif;
-        }
-        body {
-            background: #000000;
-            height: 100vh;
-            width: 100%;
-            display: flex;
-            padding-top: 1rem;
-            color: #fff;
         }
         .gr-block {
-            max-width: 400px;
-            margin: 0 auto;
-            border-radius: 0;
-            background: #000000;
-            box-shadow: none;
-            padding: 0;
-            width: 100%;
+            max-width: 800px;
+            margin: 10px auto;
+            border-radius: 15px;
+            background: rgba(255, 250, 244, 0.95);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(74, 64, 53, 0.1);
+            padding: 10px;
         }
         .gr-chatbot {
             background: transparent;
             border: none;
             height: 80vh;
+            min-height: 400px;
             overflow-y: auto;
             scrollbar-width: thin;
-            scrollbar-color: #262626 #000000;
-            padding: 0.5rem 0;
-        }
-        .gr-chatbot .wrap {
-            margin: 0 0.5rem;
-        }
-        .gr-chatbot .wrap.user {
-            display: flex;
-            justify-content: flex-end;
-            flex-direction: row-reverse;
-        }
-        .gr-chatbot .wrap.bot {
-            display: flex;
-            align-items: flex-end;
-            position: relative;
-            padding-left: 2.5rem;
-        }
-        .gr-chatbot .wrap.bot::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            height: 2rem;
-            width: 2rem;
-            background-image: url('https://avataaars.io/?avatarStyle=Circle&topType=LongHairStraight&accessoriesType=Blank&hairColor=BrownDark&facialHairType=Blank&clotheType=BlazerShirt&eyeType=Default&eyebrowType=Default&mouthType=Default&skinColor=Light');
-            background-size: cover;
-            border-radius: 50%;
-            display: none;
-        }
-        .gr-chatbot .wrap.bot:has(+ .wrap.user)::before,
-        .gr-chatbot .wrap.bot:last-child::before {
-            display: block;
+            scrollbar-color: #d9b99b #fffaf4;
+            padding: 5px 0;
         }
         .gr-chatbot .message {
-            height: fit-content;
-            width: fit-content;
-            max-width: 10rem;
-            padding: 0.5rem 1rem;
-            margin: 0.12rem 0;
+            margin: 10px 10px;
+            padding: 8px 15px;
+            border-radius: 10px;
+            max-width: 70%; /* Wider bubbles to fill space */
+            min-height: 40px;
+            line-height: 1.4;
             white-space: normal;
             word-wrap: break-word;
+            transition: transform 0.2s ease;
             display: inline-block;
         }
-        .gr-chatbot .message.bot {
-            background: #262626;
-            color: #fff;
-            border-radius: 0.5rem;
-        }
-        /* Bot first in group */
-        .gr-chatbot .wrap.user + .wrap.bot .message.bot,
-        .gr-chatbot > .wrap.bot:first-child .message.bot {
-            border-radius: 1rem 0.5rem 0.2rem 0.5rem;
-        }
-        /* Bot last in group */
-        .gr-chatbot .wrap.bot:has(+ .wrap.user) .message.bot,
-        .gr-chatbot .wrap.bot:last-child .message.bot {
-            border-radius: 0.5rem 0.2rem 0.5rem 1rem;
-        }
         .gr-chatbot .message.user {
-            background: linear-gradient(180deg, rgba(139,47,184,1) 0%, rgba(103,88,205,1) 51%, rgba(89,116,219,1) 92%);
-            color: #fff;
-            border-radius: 0.5rem 0.2rem 0.2rem 0.5rem;
+            background: linear-gradient(45deg, #d9b99b, #e8d4c0);
+            color: #4a4035;
+            margin-left: auto;
+            margin-right: 10px;
+            box-shadow: 0 3px 10px rgba(217, 185, 155, 0.2);
         }
-        /* User first in group */
-        .gr-chatbot .wrap.bot + .wrap.user .message.user,
-        .gr-chatbot > .wrap.user:first-child .message.user {
-            border-radius: 0.5rem 1rem 0.2rem 0.5rem;
-        }
-        /* User last in group */
-        .gr-chatbot .wrap.user:has(+ .wrap.bot) .message.user,
-        .gr-chatbot .wrap.user:last-child .message.user {
-            border-radius: 0.5rem 0.2rem 1rem 0.5rem;
+        .gr-chatbot .message.bot {
+            background: linear-gradient(45deg, #b8d8d8, #d1e8e8);
+            color: #4a4035;
+            margin-right: auto;
+            margin-left: 10px;
+            box-shadow: 0 3px 10px rgba(184, 216, 216, 0.2);
         }
         .gr-textbox {
-            background: #262626;
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            color: #fff;
+            background: rgba(255, 250, 244, 0.8);
+            border: 2px solid rgba(74, 64, 53, 0.2);
+            border-radius: 20px;
+            padding: 8px 12px;
+            color: #4a4035;
             font-size: 14px;
-            height: auto;
+            height: 35px;
+            transition: all 0.3s ease;
         }
         .gr-textbox:focus {
-            box-shadow: none;
+            border-color: #d9b99b;
+            box-shadow: 0 0 8px rgba(217, 185, 155, 0.4);
+            background: rgba(255, 250, 244, 0.95);
         }
         .gr-textbox::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            color: rgba(74, 64, 53, 0.5);
         }
         .gr-button {
-            background: linear-gradient(180deg, rgba(139,47,184,1) 0%, rgba(103,88,205,1) 51%, rgba(89,116,219,1) 92%);
-            color: #fff;
+            background: linear-gradient(45deg, #d9b99b, #e8d4c0);
+            color: #4a4035;
             border: none;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1rem;
-            font-weight: normal;
-            height: auto;
+            border-radius: 15px;
+            padding: 8px 15px;
+            font-weight: 600;
+            height: 35px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .gr-button:hover {
-            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(217, 185, 155, 0.3);
         }
         h1 {
-            display: none;
+            font-size: 24px;
+            text-align: center;
+            background: linear-gradient(45deg, #d9b99b, #b8d8d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 5px 0;
         }
         .gr-row {
             align-items: center;
-            background: #000000;
-            padding: 0.5rem;
-            margin: 0;
         }
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #000000;
+            background: #fffaf4;
             border-radius: 8px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #262626;
+            background: #d9b99b;
             border-radius: 8px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #333333;
+            background: #e8d4c0;
         }
     """
 ) as demo:
-    # gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")  # Commented out to match example
+    gr.Markdown("# ✨ Aesthetic AI Chatbot ✨")
     chatbot_ui = gr.Chatbot(elem_classes=["gr-chatbot"])
     with gr.Row():
-        user_input = gr.Textbox(placeholder="Type here...", show_label=False, scale=4, lines=3)
-        submit_btn = gr.Button("Send", scale=1)
+        user_input = gr.Textbox(placeholder="Type here...", show_label=False, scale=4)
+        submit_btn = gr.Button("Send", variant="primary", scale=1)
     state = gr.State([])
 
     user_input.submit(chatbot, inputs=[user_input, state], outputs=[chatbot_ui, user_input, state])
