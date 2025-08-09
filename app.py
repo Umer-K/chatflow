@@ -6,105 +6,138 @@ import json
 # Set your OpenRouter API key as a secret on Hugging Face Spaces
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
-# Custom CSS for the full-screen, glowing Gen Z aesthetic
+# Custom CSS to replicate the ChatGPT front page and chat UI
 custom_css = """
-/* The main container for the Gradio app, fills the entire viewport */
+/* Body and main container styles */
 .gradio-container {
     height: 100vh;
     padding: 0;
     margin: 0;
-    display: flex;
-    flex-direction: column;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    background-color: #f7f7f8; /* Very light gray background */
 }
 
-/* Main chat area styling, applies to the ChatInterface content */
-.gradio-app {
+/* Main chat area container */
+.main-chat-area {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Chatbot component styling */
+#chatbot {
     flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    border: none !important;
 }
 
-/* Base theme colors for our glow */
-:root {
-    --glowing-accent: #00ffff;  /* Neon cyan */
-    --glowing-shadow: 0 0 10px var(--glowing-accent), inset 0 0 5px var(--glowing-accent);
+/* Hide the chatbot label on the front page */
+#chatbot label {
+    display: none;
 }
 
-/* Chat message bubbles */
-.gradio-app .message-wrap.user {
-    background-color: var(--glowing-accent) !important;
-    color: #000000 !important; /* Use black text for contrast on cyan */
-    border-radius: 12px;
+/* "Introducing GPT-5" text and description */
+#welcome-header {
+    text-align: center;
+    color: #000000;
+    font-size: 2.5rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
 }
-.gradio-app .message-wrap.bot {
-    background-color: var(--background-fill-primary) !important;
-    color: var(--body-text-color) !important;
-    border-radius: 12px;
+#welcome-subtitle {
+    text-align: center;
+    color: #494949;
+    font-size: 1rem;
+    font-weight: 400;
+    max-width: 600px;
+    margin-bottom: 2rem;
 }
 
 /* Input area styling */
-.gradio-app .chat-input-area {
-    background-color: var(--background-fill-secondary);
+.chat-input-area {
+    width: 100%;
+    position: relative;
+    padding: 0;
+    margin-top: 1rem;
+    max-width: 800px;
 }
 
-.gradio-app .input-box {
-    max-width: 800px;
-    margin: 0 auto;
-    background-color: var(--background-fill-primary);
-    border-radius: var(--radius-xl);
-    border: 1px solid var(--border-color-primary);
-    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); /* Subtle initial glow */
+.input-box {
+    width: 100%;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1.5rem;
+    box-shadow: 0 0 15px rgba(0,0,0,0.08); /* Subtle shadow like ChatGPT */
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1.25rem;
     transition: box-shadow 0.3s ease;
 }
-.gradio-app .input-box:focus-within {
-    border-color: var(--glowing-accent);
-    box-shadow: var(--glowing-shadow); /* Stronger glow on focus */
+.input-box:focus-within {
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
 }
 
-/* Input text box */
-.gradio-app textarea {
-    border: none !important;
-    background: transparent !important;
-    color: var(--body-text-color) !important;
-    padding: 0.5rem !important;
-    font-size: 1rem !important;
-    resize: none !important;
-    outline: none !important;
+.input-box textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: black;
+    font-size: 1rem;
+    resize: none;
+    outline: none;
+    padding: 0.25rem 0;
 }
 
-/* Send button styling */
-.gradio-app .send-button {
-    background: var(--background-fill-primary) !important;
-    border: 1px solid var(--border-color-primary) !important;
-    border-radius: var(--radius-xl) !important;
-    cursor: pointer;
-    padding: 0.5rem;
-    box-shadow: 0 0 5px rgba(0, 255, 255, 0.5); /* Subtle initial glow */
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
-}
-.gradio-app .send-button:hover {
-    border-color: var(--glowing-accent) !important;
-    box-shadow: var(--glowing-shadow) !important; /* Stronger glow on hover */
-}
-.gradio-app .send-button svg {
-    width: 20px;
-    height: 20px;
-    fill: var(--glowing-accent) !important;
-}
-
-/* Hide the default chat header */
-.gradio-app .panel-header {
+/* Hide the Gradio-default send button text */
+.input-box button > span {
     display: none;
+}
+
+/* Styling the Send button icon */
+.input-box button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    margin-left: 0.5rem;
+}
+.input-box button svg {
+    width: 24px;
+    height: 24px;
+    fill: #9b9b9b;
+}
+
+/* Chat message bubbles */
+#chatbot .message-wrap.user {
+    background-color: #d1e7ff !important; /* A light blue for user messages */
+    color: black !important;
+    border-radius: 12px;
+}
+
+#chatbot .message-wrap.bot {
+    background-color: white !important;
+    color: black !important;
+    border-radius: 12px;
 }
 """
 
 def generate_response(message, history):
     if not OPENROUTER_API_KEY:
-        yield "Error: OPENROUTER_API_KEY not set. Please set this environment variable."
+        yield "Error: OPENROUTER_API_KEY not set."
         return
+
+    # Add the user's message to the history first, for immediate display
+    history.append((message, ""))
+    yield history
 
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
@@ -117,8 +150,6 @@ def generate_response(message, history):
         messages.append({"role": "user", "content": user_msg})
         if bot_msg:
             messages.append({"role": "assistant", "content": bot_msg})
-    
-    messages.append({"role": "user", "content": message})
 
     data = {
         "model": "openai/gpt-3.5-turbo",
@@ -142,19 +173,52 @@ def generate_response(message, history):
                     json_data = json.loads(line_data)
                     chunk = json_data['choices'][0]['delta'].get('content', '')
                     full_response += chunk
-                    yield full_response
+                    history[-1] = (message, full_response)
+                    yield history
                     
     except requests.exceptions.RequestException as e:
-        yield f"An error occurred: {e}"
+        history[-1] = (message, f"An error occurred: {e}")
+        yield history
     except Exception as e:
-        yield f"An unexpected error occurred: {e}"
+        history[-1] = (message, f"An unexpected error occurred: {e}")
+        yield history
 
-demo = gr.ChatInterface(
-    fn=generate_response,
-    theme="abidlabs/Halving",
-    css=custom_css,
-    title="Aesthetic Chatbot",
-    description="How can I help you today?"
-)
+with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
+    state = gr.State(value=[])
+    
+    with gr.Column(elem_classes="main-chat-area"):
+        # The welcome text and subtitle, visible on the front page
+        gr.Markdown("# Introducing GPT-5", elem_id="welcome-header")
+        gr.Markdown("ChatGPT now has our smartest, fastest, most useful model yet, with thinking built in—so you get the best answer, every time.", elem_id="welcome-subtitle")
+
+        chatbot = gr.Chatbot(elem_id="chatbot", label=None)
+        
+        with gr.Column(elem_classes="chat-input-area"):
+            with gr.Row(elem_classes="input-box", variant="panel"):
+                msg = gr.Textbox(
+                    placeholder="+ Ask anything",
+                    elem_id="user-input",
+                    lines=1,
+                    scale=9,
+                    container=False
+                )
+                send_button = gr.Button(
+                    value="",
+                    elem_classes="send-button",
+                    variant="primary",
+                    scale=1
+                )
+
+    # Event handlers
+    msg.submit(
+        generate_response,
+        [msg, state],
+        [chatbot, state, msg]
+    )
+    send_button.click(
+        generate_response,
+        [msg, state],
+        [chatbot, state, msg]
+    )
 
 demo.launch()
