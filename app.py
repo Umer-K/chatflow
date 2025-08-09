@@ -297,81 +297,6 @@ class HybridAIAssistant:
             logger.error(f"Request failed: {e}")
             return self.get_fallback_response(message)
     
-    def get_streaming_response(self, message: str, billing_context: bool = False) -> Iterator[str]:
-        """Get streaming response from OpenRouter API"""
-        
-        # Prepare system prompt
-        system_prompt = """You are a helpful, friendly AI assistant with expertise in healthcare billing codes. 
-        You can assist with any topic - from casual conversation to complex questions. 
-        When discussing medical billing codes, you provide accurate, detailed information.
-        Be conversational, helpful, and engaging. Use emojis occasionally to be friendly.
-        Keep responses concise but informative."""
-        
-        if billing_context:
-            system_prompt += "\nThe user is asking about medical billing. Provide helpful information even if you don't have specific code details."
-        
-        # Build conversation history for context
-        messages = [{'role': 'system', 'content': system_prompt}]
-        
-        # Add recent conversation history
-        for msg in self.context.messages[-10:]:
-            messages.append(msg)
-        
-        # Add current message
-        messages.append({'role': 'user', 'content': message})
-        
-        try:
-            response = requests.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers=self.headers,
-                json={
-                    'model': 'openai/gpt-3.5-turbo',
-                    'messages': messages,
-                    'temperature': 0.7,
-                    'max_tokens': 500,
-                    'stream': True
-                },
-                timeout=30,
-                stream=True
-            )
-            
-            if response.status_code == 200:
-                full_response = ""
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        if line.startswith('data: '):
-                            line = line[6:]
-                            if line.strip() == '[DONE]':
-                                break
-                            try:
-                                chunk = json.loads(line)
-                                if 'choices' in chunk and len(chunk['choices']) > 0:
-                                    delta = chunk['choices'][0].get('delta', {})
-                                    if 'content' in delta:
-                                        content = delta['content']
-                                        full_response += content
-                                        yield full_response
-                            except json.JSONDecodeError:
-                                continue
-                
-                # Update context with full response
-                self.context.messages.append({'role': 'user', 'content': message})
-                self.context.messages.append({'role': 'assistant', 'content': full_response})
-                
-                # Keep only last 20 messages in context
-                if len(self.context.messages) > 20:
-                    self.context.messages = self.context.messages[-20:]
-                
-            else:
-                fallback = self.get_fallback_response(message)
-                yield fallback
-                
-        except Exception as e:
-            logger.error(f"Streaming request failed: {e}")
-            fallback = self.get_fallback_response(message)
-            yield fallback
-    
     def get_fallback_response(self, message: str) -> str:
         """Fallback responses when API fails"""
         fallbacks = [
@@ -382,20 +307,19 @@ class HybridAIAssistant:
         ]
         return random.choice(fallbacks)
     
-    def process_message_streaming(self, message: str) -> Iterator[str]:
-        """Main method to process any message with streaming"""
+    def process_message(self, message: str) -> str:
+        """Main method to process any message"""
         if not message.strip():
-            yield "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
-            return
+            return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
         
         # Detect intent
         intent = self.detect_intent(message)
         
         # Route to appropriate handler
         if intent['is_billing'] and intent['codes_found']:
-            yield self.handle_billing_query(message, intent['codes_found'])
+            return self.handle_billing_query(message, intent['codes_found'])
         else:
-            yield from self.get_streaming_response(message, billing_context=intent['is_billing'])
+            return self.get_general_response(message, billing_context=intent['is_billing'])
     
     def reset_context(self):
         """Reset conversation context"""
@@ -406,22 +330,21 @@ assistant = HybridAIAssistant()
 
 # ============= Chat Functions =============
 
-def respond_stream(message, history):
-    """Streaming response function for ChatInterface"""
+def respond(message, history):
+    """Response function for ChatInterface"""
     if not message.strip():
-        yield "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
-        return
+        return "Feel free to ask me anything! I can help with general questions or healthcare billing codes. 😊"
     
-    # Process message with streaming
-    for partial_response in assistant.process_message_streaming(message):
-        yield partial_response
+    # Process message
+    response = assistant.process_message(message)
+    return response
 
 def reset_chat():
     """Reset the conversation context"""
     assistant.reset_context()
-    return None
+    return []
 
-# ============= Examples and Additional Buttons =============
+# ============= Examples =============
 
 examples = [
     "What is healthcare billing code A0429?",
@@ -474,21 +397,6 @@ def create_interface():
         opacity: 0.9;
     }
     
-    .examples-container {
-        margin: 1rem 0;
-        padding: 1rem;
-        background: #f8fafc;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    .examples-title {
-        color: #4a5568;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        text-align: center;
-    }
-    
     .reset-btn {
         background: #f56565 !important;
         color: white !important;
@@ -516,27 +424,9 @@ def create_interface():
         
         # Main Chat Interface
         chat_interface = gr.ChatInterface(
-            fn=respond_stream,
-            title="",  # We have custom header
-            description="",  # We have custom header
+            fn=respond,
             examples=examples,
-            cache_examples=False,
-            retry_btn="🔄 Retry",
-            undo_btn="↩️ Undo",
-            clear_btn="🗑️ Clear",
-            submit_btn="Send 📤",
-            chatbot=gr.Chatbot(
-                height=600,
-                show_copy_button=True,
-                show_share_button=False,
-                avatar_images=["👤", "🤖"]
-            ),
-            textbox=gr.Textbox(
-                placeholder="Ask me anything... (e.g., 'Explain code 99213' or 'Help me write a story')",
-                scale=7,
-                lines=1,
-                max_lines=8
-            )
+            cache_examples=False
         )
         
         # Additional controls
@@ -574,10 +464,7 @@ def create_interface():
         # Connect reset button
         reset_context_btn.click(
             fn=reset_chat,
-            inputs=None,
-            outputs=None
-        ).then(
-            lambda: gr.Info("Context reset! Starting fresh conversation.")
+            outputs=chat_interface.chatbot
         )
     
     return demo
