@@ -22,10 +22,20 @@ def generate_response_streaming(message, history):
     # Build messages from history
     messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
     
-    for user_msg, bot_msg in history:
-        messages.append({"role": "user", "content": user_msg})
-        if bot_msg:  # Only add bot message if it exists
-            messages.append({"role": "assistant", "content": bot_msg})
+    # Handle different history formats
+    for entry in history:
+        if isinstance(entry, dict):
+            # New format: [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
+            messages.append(entry)
+        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+            # Old format: [("user_msg", "bot_msg"), ...]
+            user_msg, bot_msg = entry
+            messages.append({"role": "user", "content": user_msg})
+            if bot_msg:
+                messages.append({"role": "assistant", "content": bot_msg})
+        else:
+            # Handle any other format gracefully
+            continue
     
     messages.append({"role": "user", "content": message})
     
@@ -73,4 +83,4 @@ demo = gr.ChatInterface(
 )
 
 if __name__ == "__main__":
-    demo.launch() 
+    demo.launch()
