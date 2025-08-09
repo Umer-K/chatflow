@@ -3,7 +3,7 @@ title: Healthcare Billing Chatbot
 emoji: 💻
 colorFrom: indigo
 colorTo: indigo
-sdk: gradio
+sdk: streamlit
 sdk_version: 5.42.0
 app_file: app.py
 pinned: false
