@@ -7,6 +7,7 @@ import json
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 # Custom CSS to replicate the ChatGPT front page and chat UI
+# This CSS now includes the subtle background gradient, refined search bar, and updated text sizes.
 custom_css = """
 /* Body and main container styles */
 .gradio-container {
@@ -14,7 +15,8 @@ custom_css = """
     padding: 0;
     margin: 0;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    background-color: #f7f7f8; /* Very light gray background */
+    background-color: #f7f7f8; /* Base light gray background */
+    background-image: linear-gradient(to bottom, #ffffff, #f7f7f8); /* Subtle gradient */
 }
 
 /* Main chat area container */
@@ -35,12 +37,12 @@ custom_css = """
     overflow-y: auto;
     width: 100%;
     max-width: 800px;
-    margin: 0 auto;
+    margin: 2rem auto; /* Add some top margin for the chat area */
     padding: 1rem;
     border: none !important;
 }
 
-/* Hide the chatbot label on the front page and in chat */
+/* Hide the chatbot label */
 #chatbot label {
     display: none;
 }
@@ -49,7 +51,7 @@ custom_css = """
 #welcome-header {
     text-align: center;
     color: #000000;
-    font-size: 2.5rem;
+    font-size: 2.2rem; /* Slightly smaller header */
     font-weight: 500;
     margin-bottom: 0.5rem;
 }
@@ -59,7 +61,7 @@ custom_css = """
     font-size: 1rem;
     font-weight: 400;
     max-width: 600px;
-    margin-bottom: 2rem;
+    margin-bottom: 2.5rem; /* Slightly larger bottom margin */
 }
 
 /* Input area styling */
@@ -76,14 +78,14 @@ custom_css = """
     background-color: white;
     border: 1px solid #e5e7eb;
     border-radius: 1.5rem;
-    box-shadow: 0 0 15px rgba(0,0,0,0.08); /* Subtle shadow like ChatGPT */
+    box-shadow: 0 0 15px rgba(0,0,0,0.08), inset 0 1px 2px rgba(0,0,0,0.02); /* Subtle inner shadow */
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.25rem;
+    padding: 0.9rem 1.5rem; /* Increased padding */
     transition: box-shadow 0.3s ease;
 }
 .input-box:focus-within {
-    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+    box-shadow: 0 0 15px rgba(0,0,0,0.15), inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
 .input-box textarea {
@@ -121,12 +123,17 @@ custom_css = """
     background-color: #d1e7ff !important; /* A light blue for user messages */
     color: black !important;
     border-radius: 12px;
+    padding: 0.7rem 1rem !important; /* Adjust message padding */
+    margin: 0.25rem 0;
 }
 
 #chatbot .message-wrap.bot {
     background-color: white !important;
     color: black !important;
     border-radius: 12px;
+    padding: 0.7rem 1rem !important; /* Adjust message padding */
+    margin: 0.25rem 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Subtle shadow on bot messages */
 }
 """
 
