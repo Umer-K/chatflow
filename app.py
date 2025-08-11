@@ -171,19 +171,13 @@ with st.sidebar:
     
     st.divider()
     
-    # Model selection with working models (based on your working code)
+    # Working models only (based on your requirements and OpenRouter free tier)
     models = [
         ("GPT-3.5 Turbo", "openai/gpt-3.5-turbo"),
-        ("GPT-4", "openai/gpt-4"),
-        ("Claude 3 Haiku", "anthropic/claude-3-haiku"),
-        ("Gemini Pro", "google/gemini-pro"),
-        ("Llama 3.1 8B", "meta-llama/llama-3.1-8b-instruct"),
-        ("Llama 3.1 70B", "meta-llama/llama-3.1-70b-instruct"),
-        ("Llama 3.2 3B (Free)", "meta-llama/llama-3.2-3b-instruct:free"),
-        ("Qwen 2 7B (Free)", "qwen/qwen-2-7b-instruct:free"),
-        ("Phi-3 Mini (Free)", "microsoft/phi-3-mini-128k-instruct:free"),
-        ("Zephyr 7B (Free)", "huggingfaceh4/zephyr-7b-beta:free"),
-        ("OpenChat 7B (Free)", "openchat/openchat-7b:free"),
+        ("LLaMA 3.1 8B", "meta-llama/llama-3.1-8b-instruct"),
+        ("LLaMA 3.1 70B", "meta-llama/llama-3.1-70b-instruct"),
+        ("LLaMA 4 Scout (Free)", "meta-llama/llama-4-scout:free"),
+        ("LLaMA 4 Maverick (Free)", "meta-llama/llama-4-maverick:free"),
         ("Auto (Best Available)", "openrouter/auto")
     ]
     
