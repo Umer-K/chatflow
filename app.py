@@ -294,4 +294,4 @@ if prompt := st.chat_input("Ask anything..."):
     
     # Auto-save if enabled
     if auto_save:
-        save_chat_history(st.session_state.messages)
+        save_chat_history(st.session_state.messages) 
