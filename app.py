@@ -32,6 +32,12 @@ st.markdown("""
         color: #28a745;
         font-family: monospace;
     }
+    
+    .model-attribution {
+        color: #28a745;
+        font-size: 0.8em;
+        font-style: italic;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -289,18 +295,19 @@ if prompt := st.chat_input("Ask anything..."):
                 full_response = response
                 placeholder.markdown(full_response + "▌")
             
-            # Remove cursor and show final response with attribution
-            final_response_with_attribution = full_response + f"\n\n---\n*Response created by: **{model_names[selected_index]}***"
-            placeholder.markdown(final_response_with_attribution)
+            # Remove cursor and show final response
+            placeholder.markdown(full_response)
             
         except Exception as e:
-            error_msg = f"An error occurred: {str(e)}\n\n---\n*Response created by: **{model_names[selected_index]}***"
+            error_msg = f"An error occurred: {str(e)}"
             placeholder.markdown(error_msg)
             full_response = error_msg
     
-    # Add AI response to messages with model attribution
-    full_response_with_attribution = full_response + f"\n\n---\n*Response created by: **{model_names[selected_index]}***"
-    assistant_message = {"role": "assistant", "content": full_response_with_attribution}
+    # Add model attribution below the response
+    st.markdown(f"<div class='model-attribution'>Response created by: <strong>{model_names[selected_index]}</strong></div>", unsafe_allow_html=True)
+    
+    # Add AI response to messages (without attribution in stored message)
+    assistant_message = {"role": "assistant", "content": full_response}
     st.session_state.messages.append(assistant_message)
     
     # Auto-save if enabled
