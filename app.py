@@ -3,7 +3,7 @@ import os
 import json
 import streamlit as st
 from datetime import datetime
-import pickle
+import time
 
 # Page configuration
 st.set_page_config(
@@ -74,7 +74,7 @@ def check_api_status():
     try:
         url = "https://openrouter.ai/api/v1/models"
         headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}"}
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=10)
         return "Connected" if response.status_code == 200 else "Error"
     except:
         return "Error"
@@ -86,9 +86,12 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}"
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "http://localhost:8501",  # Optional: Your site URL
+        "X-Title": "Streamlit AI Assistant"  # Optional: Your app name
     }
     
+    # Create system message and user messages
     api_messages = [{"role": "system", "content": "You are a helpful AI assistant. Provide clear and helpful responses."}]
     api_messages.extend(messages)
     
@@ -96,33 +99,64 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
         "model": model,
         "messages": api_messages,
         "stream": True,
-        "max_tokens": 1000,
-        "temperature": 0.7
+        "max_tokens": 2000,
+        "temperature": 0.7,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0
     }
     
     try:
-        response = requests.post(url, headers=headers, json=data, stream=True, timeout=30)
-        response.raise_for_status()
+        response = requests.post(url, headers=headers, json=data, stream=True, timeout=60)
+        
+        # Better error handling
+        if response.status_code != 200:
+            error_detail = ""
+            try:
+                error_data = response.json()
+                error_detail = error_data.get('error', {}).get('message', f"HTTP {response.status_code}")
+            except:
+                error_detail = f"HTTP {response.status_code}: {response.reason}"
+            
+            yield f"API Error: {error_detail}. Please try a different model or check your API key."
+            return
         
         full_response = ""
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8')
-                if line_str.startswith('data: '):
-                    line_str = line_str[6:]
-                    if line_str.strip() == '[DONE]':
-                        break
-                    try:
-                        data = json.loads(line_str)
-                        if 'choices' in data and len(data['choices']) > 0:
-                            delta = data['choices'][0].get('delta', {})
-                            if 'content' in delta:
-                                full_response += delta['content']
-                                yield full_response
-                    except json.JSONDecodeError:
-                        continue
+        buffer = ""
+        
+        for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
+            if chunk:
+                buffer += chunk
+                lines = buffer.split('\n')
+                buffer = lines[-1]  # Keep incomplete line in buffer
+                
+                for line in lines[:-1]:
+                    line = line.strip()
+                    if line.startswith('data: '):
+                        line_data = line[6:]
+                        if line_data == '[DONE]':
+                            return
+                        try:
+                            parsed_data = json.loads(line_data)
+                            if 'choices' in parsed_data and len(parsed_data['choices']) > 0:
+                                delta = parsed_data['choices'][0].get('delta', {})
+                                if 'content' in delta:
+                                    content = delta['content']
+                                    full_response += content
+                                    yield full_response
+                        except json.JSONDecodeError:
+                            continue
+                        except Exception as e:
+                            continue
+                            
+    except requests.exceptions.Timeout:
+        yield "Request timed out. Please try again with a shorter message or different model."
+    except requests.exceptions.ConnectionError:
+        yield "Connection error. Please check your internet connection and try again."
+    except requests.exceptions.RequestException as e:
+        yield f"Request error: {str(e)}. Please try again."
     except Exception as e:
-        yield f"Sorry, I encountered an error. Please try again."
+        yield f"Unexpected error: {str(e)}. Please try again or contact support."
 
 # Header
 st.title("AI Assistant")
@@ -143,27 +177,32 @@ with st.sidebar:
     
     st.divider()
     
-    # Model selection
+    # Model selection with working models
     models = [
-        "openai/gpt-3.5-turbo",
-        "openai/gpt-4",
-        "anthropic/claude-3-haiku",
-        "google/gemini-pro",
-        "meta-llama/llama-3.1-8b-instruct:free",
-        "meta-llama/llama-3.1-70b-instruct:free",
-        "meta-llama/llama-3.2-3b-instruct:free",
-        "meta-llama/llama-3.2-1b-instruct:free",
-        "qwen/qwen-2-7b-instruct:free",
-        "microsoft/phi-3-medium-4k-instruct:free",
-        "microsoft/phi-3-mini-128k-instruct:free",
-        "huggingface/zephyr-7b-beta:free",
-        "openchat/openchat-7b:free",
-        "gryphe/mythomist-7b:free",
-        "undi95/toppy-m-7b:free",
-        "openrouter/auto"
+        ("GPT-3.5 Turbo", "openai/gpt-3.5-turbo"),
+        ("GPT-4", "openai/gpt-4"),
+        ("Claude 3 Haiku", "anthropic/claude-3-haiku"),
+        ("Gemini Pro", "google/gemini-pro"),
+        ("Llama 3.1 8B (Free)", "meta-llama/llama-3.1-8b-instruct:free"),
+        ("Llama 3.1 70B (Free)", "meta-llama/llama-3.1-70b-instruct:free"),
+        ("Llama 3.2 3B (Free)", "meta-llama/llama-3.2-3b-instruct:free"),
+        ("Qwen 2 7B (Free)", "qwen/qwen-2-7b-instruct:free"),
+        ("Phi-3 Mini (Free)", "microsoft/phi-3-mini-128k-instruct:free"),
+        ("Zephyr 7B (Free)", "huggingfaceh4/zephyr-7b-beta:free"),
+        ("OpenChat 7B (Free)", "openchat/openchat-7b:free"),
+        ("Auto (Best Available)", "openrouter/auto")
     ]
     
-    selected_model = st.selectbox("Model", models, index=0)
+    model_names = [name for name, _ in models]
+    model_ids = [model_id for _, model_id in models]
+    
+    selected_index = st.selectbox("Model", range(len(model_names)), 
+                                format_func=lambda x: model_names[x], 
+                                index=0)
+    selected_model = model_ids[selected_index]
+    
+    # Show selected model ID
+    st.caption(f"Model ID: {selected_model}")
     
     st.divider()
     
@@ -248,11 +287,18 @@ if prompt := st.chat_input("Ask anything..."):
         placeholder = st.empty()
         
         full_response = ""
-        for response in get_ai_response(st.session_state.messages, selected_model):
-            full_response = response
-            placeholder.markdown(full_response + "▌")
-        
-        placeholder.markdown(full_response)
+        try:
+            for response in get_ai_response(st.session_state.messages, selected_model):
+                full_response = response
+                placeholder.markdown(full_response + "▌")
+            
+            # Remove cursor
+            placeholder.markdown(full_response)
+            
+        except Exception as e:
+            error_msg = f"An error occurred: {str(e)}"
+            placeholder.markdown(error_msg)
+            full_response = error_msg
     
     # Add AI response to messages
     assistant_message = {"role": "assistant", "content": full_response}
