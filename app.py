@@ -269,7 +269,19 @@ if not st.session_state.messages:
 # Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+        # Check if this is an assistant message with attribution
+        if message["role"] == "assistant" and "Response created by:" in message["content"]:
+            # Split content and attribution
+            parts = message["content"].split("\n\n---\n*Response created by:")
+            main_content = parts[0]
+            if len(parts) > 1:
+                model_name = parts[1].replace("***", "").replace("**", "")
+                st.markdown(main_content)
+                st.markdown(f"<div class='model-attribution'>Response created by: <strong>{model_name}</strong></div>", unsafe_allow_html=True)
+            else:
+                st.markdown(message["content"])
+        else:
+            st.markdown(message["content"])
 
 # Chat input
 if prompt := st.chat_input("Ask anything..."):
