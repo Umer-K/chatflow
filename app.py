@@ -171,13 +171,19 @@ with st.sidebar:
     
     st.divider()
     
-    # Working models only (based on your requirements and OpenRouter free tier)
+    # All available free models from OpenRouter (confirmed working)
     models = [
         ("GPT-3.5 Turbo", "openai/gpt-3.5-turbo"),
         ("LLaMA 3.1 8B", "meta-llama/llama-3.1-8b-instruct"),
         ("LLaMA 3.1 70B", "meta-llama/llama-3.1-70b-instruct"),
-        ("LLaMA 4 Scout (Free)", "meta-llama/llama-4-scout:free"),
-        ("LLaMA 4 Maverick (Free)", "meta-llama/llama-4-maverick:free"),
+        ("DeepSeek V3 (Free)", "deepseek/deepseek-v3"),
+        ("DeepSeek R1 0528 (Free)", "deepseek/deepseek-r1:0528"),
+        ("DeepSeek R1 (Free)", "deepseek/deepseek-r1"),
+        ("Qwen3 Coder (Free)", "qwen/qwen-3-coder-480b"),
+        ("GLM 4.5 Air (Free)", "z-ai/glm-4.5-air"),
+        ("TNG DeepSeek R1T2 Chimera (Free)", "tng/deepseek-r1t2-chimera"),
+        ("Kimi K2 (Free)", "moonshot/kimi-k2"),
+        ("TNG DeepSeek R1T Chimera (Free)", "tng/deepseek-r1t-chimera"),
         ("Auto (Best Available)", "openrouter/auto")
     ]
     
@@ -294,4 +300,4 @@ if prompt := st.chat_input("Ask anything..."):
     
     # Auto-save if enabled
     if auto_save:
-        save_chat_history(st.session_state.messages) 
+        save_chat_history(st.session_state.messages)
