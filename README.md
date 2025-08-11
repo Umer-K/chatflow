@@ -1,31 +1,42 @@
----
-title: 'ChatFlow '
-emoji: 📚
-colorFrom: blue
-colorTo: pink
-sdk: streamlit
-sdk_version: 1.28.1
-app_file: app.py
-pinned: true
-license: mit
-short_description: One interface, 15+ AI models, persistent chat.
-thumbnail: >-
-  https://cdn-uploads.huggingface.co/production/uploads/688dfa71393005de0077ca78/CjkodJCkxhiwNqjsY2AOv.jpeg
----
+ChatFlow 〽️
+ChatFlow is a lightweight Streamlit-based AI assistant that connects to OpenRouter to give you access to multiple state-of-the-art language models. It features real-time streaming responses, persistent chat history, and a clean, distraction-free UI — making it ideal for both development and personal use.
 
-# AI Assistant 2025 🤖
+🚀 Features
+Multiple AI Models Support – Switch between GPT-3.5, LLaMA 3, DeepSeek, Qwen, Gemma, Microsoft MAI, or automatic best model via OpenRouter.
 
-A modern AI chatbot with beautiful 2025 design, built with Streamlit and powered by OpenRouter API.
+Streaming Responses – See answers appear in real time while they’re being generated.
 
-## Features
-- 🎨 Modern gradient design
-- 💬 Real-time streaming responses  
-- 🚀 Fast and responsive interface
-- 🛠️ Easy to customize
+Chat History Management – Save, load, clear, and download conversation history (chat_history.json).
 
-## Setup
-1. Add your `OPENROUTER_API_KEY` in Space secrets
-2. The app will automatically start!
+Auto-Save Option – Automatically store messages between sessions.
 
----
-*Built with Streamlit • Powered by AI*
+Model Attribution – Shows which model produced each response.
+
+Customizable Settings – Select model from the sidebar and check API connection status.
+
+Persistent Storage – Keeps chat history even after restarting the app.
+
+Minimalist UI – White background, hidden Streamlit menus, and compact layout.
+
+Robust Error Handling – Detects API key issues, network errors, and timeouts.
+
+📦 Installation
+git clone https://github.com/Umer-K/chatflow.git
+cd chatflow
+pip install -r requirements.txt
+
+🔑 Environment Variables
+Set your OpenRouter API key before running the app:
+export OPENROUTER_API_KEY="your_api_key_here"  # Linux / macOS
+setx OPENROUTER_API_KEY "your_api_key_here"   # Windows
+
+Get your API key from: https://openrouter.ai/keys
+
+Use the sidebar to select the AI model and manage chat history.
+
+Type your question in the chat input and receive a streaming AI response.
+
+Save, load, or clear chat history directly from the sidebar.
+
+📜 License
+This project is licensed under the MIT License.
