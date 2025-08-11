@@ -124,30 +124,24 @@ def get_ai_response(messages, model="openai/gpt-3.5-turbo"):
         full_response = ""
         buffer = ""
         
-        for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
-            if chunk:
-                buffer += chunk
-                lines = buffer.split('\n')
-                buffer = lines[-1]  # Keep incomplete line in buffer
-                
-                for line in lines[:-1]:
-                    line = line.strip()
-                    if line.startswith('data: '):
-                        line_data = line[6:]
-                        if line_data == '[DONE]':
-                            return
-                        try:
-                            parsed_data = json.loads(line_data)
-                            if 'choices' in parsed_data and len(parsed_data['choices']) > 0:
-                                delta = parsed_data['choices'][0].get('delta', {})
-                                if 'content' in delta:
-                                    content = delta['content']
-                                    full_response += content
-                                    yield full_response
-                        except json.JSONDecodeError:
-                            continue
-                        except Exception as e:
-                            continue
+        # Using your working streaming logic
+        for line in response.iter_lines():
+            if line:
+                # The server sends lines starting with "data: ..."
+                if line.startswith(b"data: "):
+                    data_str = line[len(b"data: "):].decode("utf-8")
+                    if data_str.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(data_str)
+                        delta = data["choices"][0]["delta"].get("content", "")
+                        if delta:
+                            full_response += delta
+                            yield full_response
+                    except json.JSONDecodeError:
+                        continue
+                    except (KeyError, IndexError):
+                        continue
                             
     except requests.exceptions.Timeout:
         yield "Request timed out. Please try again with a shorter message or different model."
@@ -177,14 +171,14 @@ with st.sidebar:
     
     st.divider()
     
-    # Model selection with working models
+    # Model selection with working models (based on your working code)
     models = [
         ("GPT-3.5 Turbo", "openai/gpt-3.5-turbo"),
         ("GPT-4", "openai/gpt-4"),
         ("Claude 3 Haiku", "anthropic/claude-3-haiku"),
         ("Gemini Pro", "google/gemini-pro"),
-        ("Llama 3.1 8B (Free)", "meta-llama/llama-3.1-8b-instruct:free"),
-        ("Llama 3.1 70B (Free)", "meta-llama/llama-3.1-70b-instruct:free"),
+        ("Llama 3.1 8B", "meta-llama/llama-3.1-8b-instruct"),
+        ("Llama 3.1 70B", "meta-llama/llama-3.1-70b-instruct"),
         ("Llama 3.2 3B (Free)", "meta-llama/llama-3.2-3b-instruct:free"),
         ("Qwen 2 7B (Free)", "qwen/qwen-2-7b-instruct:free"),
         ("Phi-3 Mini (Free)", "microsoft/phi-3-mini-128k-instruct:free"),
