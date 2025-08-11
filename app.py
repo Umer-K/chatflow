@@ -289,16 +289,18 @@ if prompt := st.chat_input("Ask anything..."):
                 full_response = response
                 placeholder.markdown(full_response + "▌")
             
-            # Remove cursor
-            placeholder.markdown(full_response)
+            # Remove cursor and show final response with attribution
+            final_response_with_attribution = full_response + f"\n\n---\n*Response created by: **{model_names[selected_index]}***"
+            placeholder.markdown(final_response_with_attribution)
             
         except Exception as e:
-            error_msg = f"An error occurred: {str(e)}"
+            error_msg = f"An error occurred: {str(e)}\n\n---\n*Response created by: **{model_names[selected_index]}***"
             placeholder.markdown(error_msg)
             full_response = error_msg
     
-    # Add AI response to messages
-    assistant_message = {"role": "assistant", "content": full_response}
+    # Add AI response to messages with model attribution
+    full_response_with_attribution = full_response + f"\n\n---\n*Response created by: **{model_names[selected_index]}***"
+    assistant_message = {"role": "assistant", "content": full_response_with_attribution}
     st.session_state.messages.append(assistant_message)
     
     # Auto-save if enabled
