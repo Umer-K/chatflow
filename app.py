@@ -303,11 +303,9 @@ if prompt := st.chat_input("Ask anything..."):
             placeholder.markdown(error_msg)
             full_response = error_msg
     
-    # Add model attribution below the response
-    st.markdown(f"<div class='model-attribution'>Response created by: <strong>{model_names[selected_index]}</strong></div>", unsafe_allow_html=True)
-    
-    # Add AI response to messages (without attribution in stored message)
-    assistant_message = {"role": "assistant", "content": full_response}
+    # Add AI response to messages with attribution
+    full_response_with_attribution = full_response + f"\n\n---\n*Response created by: **{model_names[selected_index]}***"
+    assistant_message = {"role": "assistant", "content": full_response_with_attribution}
     st.session_state.messages.append(assistant_message)
     
     # Auto-save if enabled
